@@ -72,10 +72,13 @@
     <Compile Include="Assets\TutorialInfo\Scripts\Readme.cs" />
     <Compile Include="Assets\Scripts\DroneSimulationServer.cs" />
     <Compile Include="Assets\Scripts\DroneSimulationClient.cs" />
+    <Compile Include="Assets\Scripts\BoidController.cs" />
     <Compile Include="Assets\LitJson\JsonData.cs" />
+    <Compile Include="Assets\Scripts\SceneController.cs" />
     <Compile Include="Assets\Scripts\DroneInformation.cs" />
     <Compile Include="Assets\Scripts\DroneBehavior.cs" />
     <Compile Include="Assets\LitJson\JsonReader.cs" />
+    <Compile Include="Assets\Scripts\Test.cs" />
     <Compile Include="Assets\Scripts\DroneSwarmControle.cs" />
     <Compile Include="Assets\LitJson\JsonWriter.cs" />
   </ItemGroup>

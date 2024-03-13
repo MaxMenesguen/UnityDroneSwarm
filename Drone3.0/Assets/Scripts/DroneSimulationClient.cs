@@ -9,6 +9,9 @@ using System.Threading.Tasks;
 using System.Collections.Concurrent;
 using UnityEngine.Rendering;
 using System.Collections.Generic;
+using Unity.VisualScripting.Antlr3.Runtime;
+using System.Threading;
+using System.Linq;
 
 
 public class DroneSimulationClient : MonoBehaviour
@@ -16,13 +19,17 @@ public class DroneSimulationClient : MonoBehaviour
     private TcpClient client;
     private NetworkStream stream;
     private int numberOfDrones = 0;
+    private CancellationTokenSource cancellationTokenSource = new CancellationTokenSource();
     private ConcurrentQueue<string> messagesFromServerQueue = new ConcurrentQueue<string>();
     private ConcurrentQueue<string> messagesToServerQueue = new ConcurrentQueue<string>();
     public static bool droneClientCreated = false;
     public static List<DroneInformation> droneInformationClient = new List<DroneInformation>();
+    private ManualResetEventSlim messageAvailable = new ManualResetEventSlim(false);
     // Configuration
     private string serverIP = "127.0.0.1";
     private int serverPort = 8080;
+
+    private List<Double> reactionTime = new List<Double>();
 
     void Start()
     {
@@ -32,7 +39,7 @@ public class DroneSimulationClient : MonoBehaviour
         {
             try
             {
-                await ConnectToServer(numberOfDrones);
+                await ConnectToServer(numberOfDrones, cancellationTokenSource.Token);
             }
             catch (Exception ex)
             {
@@ -44,8 +51,9 @@ public class DroneSimulationClient : MonoBehaviour
     }
 
 
-    async Task ConnectToServer(int numberOfDrones)
+    async Task ConnectToServer(int numberOfDrones, CancellationToken token)
     {
+        bool conect = false;
         try
         {
             client = new TcpClient(serverIP, serverPort);
@@ -63,22 +71,130 @@ public class DroneSimulationClient : MonoBehaviour
             buffer = new byte[1024];
             int bytesRead = await stream.ReadAsync(buffer, 0, buffer.Length);
             string response = Encoding.ASCII.GetString(buffer, 0, bytesRead);
-            messagesFromServerQueue.Enqueue(response);
+
+            if (response.StartsWith("{\"Positions\":{\"SimulationDrone1\":"))
+            {
+                
+                conect = true;
+                messagesFromServerQueue.Enqueue(response);
+                // Handle Server messages in separate tasks
+                var receiveTask = ReceiveMessagesAsyncClient(client, token);
+                var sendTask = SendMessagesAsyncClient(client, token);
+
+                await Task.WhenAll(receiveTask, sendTask); // Wait for any task to complete
+            }
+            else
+            {
+                int retryCount = 0;
+                int maxRetries = 5;
+                while (retryCount < maxRetries && !conect)
+                {
+                    try
+                    {
+                        await ConnectToServer(numberOfDrones, token);
+
+                        // Listen for a response from the server
+                        buffer = new byte[1024];
+                        bytesRead = await stream.ReadAsync(buffer, 0, buffer.Length);
+                        response = Encoding.ASCII.GetString(buffer, 0, bytesRead);
+                        if (response.StartsWith("{\"Positions\":{\"SimulationDrone1\":"))
+                        {
+                            conect = true;
+                        }
+
+                    }
+                    catch (Exception ex)
+                    {
+                        Debug.LogError(ex.Message);
+                        retryCount++;
+                        await Task.Delay(1000); // Wait before retrying
+                    }
+                }
+            }
+
             Debug.Log("Received: " + response);
+            
         }
         catch (SocketException ex)
         {
             Debug.LogError("SocketException: " + ex.Message);
         }
+        //maybe cause bug
+        /*finally
+        {
+            stream?.Close();
+            client?.Close();
+        }*/
+        
+    }
+    async Task SendMessagesAsyncClient(TcpClient client, CancellationToken token)
+    {
+        var stream = client.GetStream();
+
+        try
+        {
+            while (!token.IsCancellationRequested)
+            {
+                if (messagesToServerQueue.TryDequeue(out string message))
+                {
+                    byte[] buffer = Encoding.ASCII.GetBytes(message);
+                    await stream.WriteAsync(buffer, 0, buffer.Length, token);
+                    messageAvailable.Reset();
+                }
+                else
+                {
+                    messageAvailable.Wait(token); // Wait until a message is available
+                }
+            }
+            Debug.Log("Close SendMessagesAsyncClient");
+        }
+        catch (OperationCanceledException) { /* Graceful shutdown */ }
+        catch (Exception ex) { Debug.LogError($"Send error: {ex.Message}"); }
+    }
+    async Task ReceiveMessagesAsyncClient(TcpClient client, CancellationToken token)
+    {
+        var stream = client.GetStream();
+        byte[] buffer = new byte[1024];
+        try
+        {
+            
+            while (!token.IsCancellationRequested)
+            {
+                //try to put everything in try catch to get the error
+                //try to not wave asyncrones method (ReadAsync)
+                int bytesRead = await stream.ReadAsync(buffer, 0, buffer.Length, token);
+                if (bytesRead == 0) break; // Connection closed
+                string message = Encoding.ASCII.GetString(buffer, 0, bytesRead);
+                messagesFromServerQueue.Enqueue(message);
+            }
+        }
+        catch (OperationCanceledException)
+        {
+            Debug.Log("Read operation was canceled.");
+        }
+        catch (IOException ex)
+        {
+            Debug.LogError($"Receive error: {ex.Message}");
+        }
+        finally
+        {
+            // Consider cleanup here if necessary
+        }
     }
 
     string messageFromServer;
+    bool firstmessagesent = false;
+    DateTime startTime;
+    DateTime endTime;
+    //with 10000 operations i get 14,3 ms of ping time in local network
+    //witch is pretty good
     private void Update()
     {
         if (!droneClientCreated) 
         { 
             if (messagesFromServerQueue.TryDequeue(out messageFromServer))
             {
+                Debug.Log("Dequeued message : " + messageFromServer);
                 DronePositionResponse droneFirstPosition = Newtonsoft.Json.JsonConvert.DeserializeObject<DronePositionResponse>(messageFromServer);
                 for (int i = 0; i < droneFirstPosition.Positions.Count; i++)
                 {
@@ -108,18 +224,84 @@ public class DroneSimulationClient : MonoBehaviour
             }
                 
         }
-        else
+        else if (droneClientCreated && !firstmessagesent)
+        {
+            startTime = DateTime.Now;
+            messagesToServerQueue.Enqueue("1");
+            messageAvailable.Set(); // Signal that a message is ready to be sent
+            firstmessagesent = true;
+            Debug.Log("Client sending number: 1");
+            
+        }
+        else if (droneClientCreated && firstmessagesent)
         {
             if (messagesFromServerQueue.TryDequeue(out messageFromServer))
             {
-
+                int number = ExtractNumber(messageFromServer);
+                if (number < 100)
+                {
+                    DateTime endTime = DateTime.Now;
+                    reactionTime.Add((endTime - startTime).TotalMilliseconds);
+                    int nextNumber = number + 1;
+                    string messageToSend = nextNumber.ToString();
+                    messagesToServerQueue.Enqueue(messageToSend);
+                    messageAvailable.Set(); // Signal that a message is ready to be sent
+                    startTime = DateTime.Now;
+                    Debug.Log($"Client sending number: {nextNumber}");
+                }
+                //Debug
+                else
+                {
+                    DateTime endTime = DateTime.Now;
+                    reactionTime.Add((endTime - startTime).TotalMilliseconds);
+                    double averageTime = reactionTime.Average();
+                    Debug.Log("Average time of Network: " + averageTime);
+                    
+                    //OnDestroy(); // Reuse the cleanup logic
+                }
             }
         }
     }
+    // Utility method to extract numbers from server messages
+    int ExtractNumber(string message)
+    {
+        // Assuming message is just a number for simplicity
+        return int.TryParse(message, out int number) ? number : 0;
+    }
     void OnDestroy()
     {
-        // Close the stream and client when the object is destroyed
-        stream?.Close();
-        client?.Close();
+        
+
+        // Check if the stream and client exist and close them if they do
+        if (stream != null)
+        {
+            try
+            {
+                stream.Close();
+            }
+            catch (Exception ex)
+            {
+                Debug.LogError($"Error closing stream: {ex.Message}");
+            }
+        }
+        if (client != null)
+        {
+            try
+            {
+                client.Close();
+            }
+            catch (Exception ex)
+            {
+                Debug.LogError($"Error closing client: {ex.Message}");
+            }
+        }
+        cancellationTokenSource.Cancel(); // Signal all ongoing operations to cancel
+        
+    }
+
+    //debug method
+    private void OnApplicationQuit()
+    {
+        OnDestroy(); // Reuse the cleanup logic
     }
 }

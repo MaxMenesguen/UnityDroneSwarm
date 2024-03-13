@@ -64,8 +64,8 @@ public class DroneSimulationServer : MonoBehaviour
             Debug.Log("Client connected.");
 
             // Handle client in separate tasks
-            var receiveTask = ReceiveMessagesAsync(connectedClient, token);
-            var sendTask = SendMessagesAsync(connectedClient, token);
+            var receiveTask = ReceiveMessagesAsyncServer(connectedClient, token);
+            var sendTask = SendMessagesAsyncServer(connectedClient, token);
 
             await Task.WhenAny(receiveTask, sendTask); // Wait for any task to complete
         }
@@ -78,7 +78,7 @@ public class DroneSimulationServer : MonoBehaviour
             tcpListener.Stop();
         }
     }
-    async Task ReceiveMessagesAsync(TcpClient client, CancellationToken token)
+    async Task ReceiveMessagesAsyncServer(TcpClient client, CancellationToken token)
     {
         var stream = client.GetStream();
         byte[] buffer = new byte[1024];
@@ -97,7 +97,7 @@ public class DroneSimulationServer : MonoBehaviour
         catch (Exception ex) { Debug.LogError($"Receive error: {ex.Message}"); }
     }
 
-    async Task SendMessagesAsync(TcpClient client, CancellationToken token)
+    async Task SendMessagesAsyncServer(TcpClient client, CancellationToken token)
     {
         var stream = client.GetStream();
 
@@ -140,6 +140,7 @@ public class DroneSimulationServer : MonoBehaviour
                     Debug.Log($"Extracted number of drones: {numberOfDrones}");
                     messagesToClientQueue.Enqueue(ToJson(CreatFakeDrone(numberOfDrones)));
                     messageAvailable.Set();
+                    droneCreatedSent = true;
                 }
                 else
                 {
@@ -147,15 +148,30 @@ public class DroneSimulationServer : MonoBehaviour
                 }
             }
             
-            
         }
-        
-        
+        else
+        {
+            if (messagesFromClientQueue.TryDequeue(out messageFromClient))
+            {
+                Debug.Log($"Server received: {messageFromClient}");
 
-
-        // Main game loop or equivalent
-        // Process messages from messagesFromClientQueue
-        // For each message, determine the target client and enqueue the response in the respective client's queue in clientMessageQueues
+                int number = ExtractNumber(messageFromClient);
+                if (number < 100)
+                {
+                    int nextNumber = number + 1;
+                    string messageToSend = nextNumber.ToString();
+                    messagesToClientQueue.Enqueue(messageToSend);
+                    messageAvailable.Set(); // Signal that a message is ready to be sent
+                    Debug.Log($"Server sending number: {nextNumber}");
+                }
+            }
+        }
+    }
+    // Utility method to extract numbers from server messages
+    int ExtractNumber(string message)
+    {
+        // Assuming message is just a number for simplicity
+        return int.TryParse(message, out int number) ? number : 0;
     }
 
     private List<DroneInformation> CreatFakeDrone(int numberOfDrones)
