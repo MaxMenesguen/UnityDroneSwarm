@@ -12,13 +12,17 @@ using System.Collections.Generic;
 using Unity.VisualScripting.Antlr3.Runtime;
 using System.Threading;
 using System.Linq;
+using Newtonsoft.Json;
 
 
 public class DroneSimulationClient : MonoBehaviour
 {
+    public DroneSwarmControle referenceToDroneSwarmControle;
+
     private TcpClient client;
     private NetworkStream stream;
     private int numberOfDrones = 0;
+    private float sizeOfBoidBoundingBox =0f;
     private CancellationTokenSource cancellationTokenSource = new CancellationTokenSource();
     private ConcurrentQueue<string> messagesFromServerQueue = new ConcurrentQueue<string>();
     private ConcurrentQueue<string> messagesToServerQueue = new ConcurrentQueue<string>();
@@ -29,17 +33,19 @@ public class DroneSimulationClient : MonoBehaviour
     private string serverIP = "127.0.0.1";
     private int serverPort = 8080;
 
-    private List<Double> reactionTime = new List<Double>();
+    //private List<Double> reactionTime = new List<Double>(); //for ping test
 
     void Start()
     {
-        numberOfDrones = DroneSwarmControle.numberOfDronesPublic;
+        referenceToDroneSwarmControle = FindObjectOfType<DroneSwarmControle>();
+        numberOfDrones = referenceToDroneSwarmControle.NumberOfDrones;
+        sizeOfBoidBoundingBox = referenceToDroneSwarmControle.SizeOfBoidBoundingBox; //still need to setup to use it 
         // Start the async operation without awaiting it
         Task.Run(async () =>
         {
             try
             {
-                await ConnectToServer(numberOfDrones, cancellationTokenSource.Token);
+                await ConnectToServer(numberOfDrones, sizeOfBoidBoundingBox, cancellationTokenSource.Token);
             }
             catch (Exception ex)
             {
@@ -51,7 +57,7 @@ public class DroneSimulationClient : MonoBehaviour
     }
 
 
-    async Task ConnectToServer(int numberOfDrones, CancellationToken token)
+    async Task ConnectToServer(int numberOfDrones,float sizeOfBoidBoundingBox, CancellationToken token)
     {
         bool conect = false;
         try
@@ -68,7 +74,7 @@ public class DroneSimulationClient : MonoBehaviour
             Debug.Log("Sent: " + messageToSend);
 
             // Listen for a response from the server
-            buffer = new byte[1024];
+            buffer = new byte[2048 * 4];
             int bytesRead = await stream.ReadAsync(buffer, 0, buffer.Length);
             string response = Encoding.ASCII.GetString(buffer, 0, bytesRead);
 
@@ -91,7 +97,7 @@ public class DroneSimulationClient : MonoBehaviour
                 {
                     try
                     {
-                        await ConnectToServer(numberOfDrones, token);
+                        await ConnectToServer(numberOfDrones, sizeOfBoidBoundingBox, token);
 
                         // Listen for a response from the server
                         buffer = new byte[1024];
@@ -183,7 +189,7 @@ public class DroneSimulationClient : MonoBehaviour
     }
 
     string messageFromServer;
-    bool firstmessagesent = false;
+    //bool firstmessagesent = false; For ping test
     DateTime startTime;
     DateTime endTime;
     //with 10000 operations i get 14,3 ms of ping time in local network
@@ -224,7 +230,48 @@ public class DroneSimulationClient : MonoBehaviour
             }
                 
         }
-        else if (droneClientCreated && !firstmessagesent)
+        //add a ready to be sent check?
+        else if (droneClientCreated && DroneSwarmControle.droneInformation != null && DroneSwarmControle.droneInitialized)
+        {
+            List<DroneSpeedData> droneSpeedDataList = new List<DroneSpeedData>();
+
+            for (int i = 0; i < DroneSwarmControle.droneInformation.Count; i++)
+            {
+                DroneSpeedData data = new DroneSpeedData
+                {
+                    droneIP = DroneSwarmControle.droneInformation[i].droneIP,
+                    Vx = DroneSwarmControle.droneInformation[i].droneVelocity.vitesseDroneX,
+                    Vy = DroneSwarmControle.droneInformation[i].droneVelocity.vitesseDroneY,
+                    Vz = DroneSwarmControle.droneInformation[i].droneVelocity.vitesseDroneZ,
+                    yaw_rate = DroneSwarmControle.droneInformation[i].droneVelocity.vitesseDroneYaw
+                };
+                droneSpeedDataList.Add(data);
+            }
+
+            // Serialize the list directly to JSON using Newtonsoft.Json
+            string json = JsonConvert.SerializeObject(droneSpeedDataList, Formatting.Indented);
+            Debug.Log("Serialized Speed JSON: " + json);
+            messagesToServerQueue.Enqueue(json);
+            messageAvailable.Set(); // Signal that a message is ready to be sent
+
+            if (messagesFromServerQueue.TryDequeue(out messageFromServer))
+            {
+                Debug.Log("Dequeued message : " + messageFromServer);
+                DronePositionResponse dronePositionReponse = Newtonsoft.Json.JsonConvert.DeserializeObject<DronePositionResponse>(messageFromServer);
+                for (int i = 0; i < dronePositionReponse.Positions.Count; i++)
+                {
+                    DroneSwarmControle.droneInformation[i].dronePosition.positionDroneX = dronePositionReponse.Positions[DroneSwarmControle.droneInformation[i].droneIP][0];
+                    DroneSwarmControle.droneInformation[i].dronePosition.positionDroneY = dronePositionReponse.Positions[DroneSwarmControle.droneInformation[i].droneIP][1];
+                    DroneSwarmControle.droneInformation[i].dronePosition.positionDroneZ = dronePositionReponse.Positions[DroneSwarmControle.droneInformation[i].droneIP][2];
+                    DroneSwarmControle.droneInformation[i].dronePosition.rotationDroneYaw = dronePositionReponse.Positions[DroneSwarmControle.droneInformation[i].droneIP][3];
+                    
+                }
+                
+            }
+
+        }
+        //ping test
+        /*else if (droneClientCreated && !firstmessagesent)
         {
             startTime = DateTime.Now;
             messagesToServerQueue.Enqueue("1");
@@ -238,7 +285,7 @@ public class DroneSimulationClient : MonoBehaviour
             if (messagesFromServerQueue.TryDequeue(out messageFromServer))
             {
                 int number = ExtractNumber(messageFromServer);
-                if (number < 100)
+                if (number < 1000)
                 {
                     DateTime endTime = DateTime.Now;
                     reactionTime.Add((endTime - startTime).TotalMilliseconds);
@@ -260,7 +307,7 @@ public class DroneSimulationClient : MonoBehaviour
                     //OnDestroy(); // Reuse the cleanup logic
                 }
             }
-        }
+        }*/
     }
     // Utility method to extract numbers from server messages
     int ExtractNumber(string message)

@@ -192,7 +192,7 @@ public class APIHelper : MonoBehaviour
                     //Debug.Log( "Type de position "+dronePosition.Positions[droneInformation[i].droneIP][0].GetType());
                     if (dronePosition.Positions.ContainsKey(droneInformation[i].droneIP))
                     {
-                        //Warning !!!! i inversed the y and z axis since unity has a different axis system than the API
+                        
                         DroneSwarmControle.droneInformation[i].dronePosition.positionInfo = true;
                         DroneSwarmControle.droneInformation[i].dronePosition.positionDroneX = dronePosition.Positions[droneInformation[i].droneIP][0];
                         DroneSwarmControle.droneInformation[i].dronePosition.positionDroneY = dronePosition.Positions[droneInformation[i].droneIP][1];

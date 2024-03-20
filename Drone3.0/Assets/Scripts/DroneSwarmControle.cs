@@ -6,7 +6,8 @@ using static DroneBehavior;
 
 public class DroneSwarmControle : MonoBehaviour
 {
-    [SerializeField] private GameObject DronePrefab; // Référence au prefab du drone
+    //[SerializeField] private GameObject DronePrefab; // Référence au prefab du drone
+    public BoidController boidPrefab;
     [SerializeField] private GameObject ClientAndServerPrefab;
 
     [SerializeField] private bool APIRequest = false;
@@ -16,11 +17,23 @@ public class DroneSwarmControle : MonoBehaviour
     [SerializeField] private bool startGoTO = false;
     [SerializeField] private Vector3 GoToPosition = new Vector3(0, 0, 0);
     [SerializeField] private bool droneSimulation = false;
-    [SerializeField] private int numberOfDrones = 0; // Nombre de drones à créer
-    public static int numberOfDronesPublic;
+    [SerializeField] private float sizeOfBoidBoundingBox = 2f; // size of the bounding box for the boids
+    // Public property to access sizeOfBoidBoundingBox
+    public float SizeOfBoidBoundingBox
+    {
+        get { return sizeOfBoidBoundingBox; }
+        //set { sizeOfBoidBoundingBox = value; } // Make it readonly if you don't want it to be changed from other scripts
+    }
 
-    private List<GameObject> droneObjects = new List<GameObject>(); // Liste pour stocker les GameObjects des drones
-    
+    [SerializeField] private int numberOfDrones = 0; // Nombre de drones à créer
+    public int NumberOfDrones
+    {
+        get { return numberOfDrones; }
+        //set { numberOfDrones = value; }
+    }
+
+    private List<BoidController> _droneGameObject; // Liste pour stocker les GameObjects des drones
+    private List<DroneBehavior> droneObjects = new List<DroneBehavior>(); // Liste pour stocker les scripts des drones
 
     public static bool droneConected = false;
     public static List<DroneInformation> droneInformation = null; // Liste pour stocker les informations des drones
@@ -59,7 +72,6 @@ public class DroneSwarmControle : MonoBehaviour
             {
                 InitialiserDrone();
             }
-            // Si vous ne voulez pas utiliser l'API, vous pouvez simplement appeler la méthode UpdateDroneInfo() ici
             if (droneAPITracking)
             {
                 if (droneObjects.Count > 0)
@@ -105,7 +117,7 @@ public class DroneSwarmControle : MonoBehaviour
                 if (serverUpAndRunning == false)
                 {
                     serverUpAndRunning = true;
-                    numberOfDronesPublic = numberOfDrones;
+                    
                     GameObject clientAndServer = Instantiate(ClientAndServerPrefab);
                     
                 }
@@ -116,6 +128,39 @@ public class DroneSwarmControle : MonoBehaviour
                 if (droneInformation != null && !droneInitialized)
                 {
                     InitialiserDrone();
+                    Debug.Log("Drone initialized");
+
+                }
+                else if (droneInformation != null && droneInitialized)
+                {
+                    //make boid simulation
+                    //get the speed of the drone
+                    foreach (BoidController boid in _droneGameObject)
+                    {
+                        List<float> simulationInformations = boid.SimulateMovement(_droneGameObject, sizeOfBoidBoundingBox, Time.deltaTime);
+                        if (simulationInformations != null)
+                        {
+                            droneInformation[_droneGameObject.IndexOf(boid)].droneVelocity.vitesseDroneX = simulationInformations[0];
+                            droneInformation[_droneGameObject.IndexOf(boid)].droneVelocity.vitesseDroneY = simulationInformations[1];
+                            droneInformation[_droneGameObject.IndexOf(boid)].droneVelocity.vitesseDroneZ = simulationInformations[2];
+                            droneInformation[_droneGameObject.IndexOf(boid)].droneVelocity.vitesseDroneYaw = simulationInformations[3];
+                            droneInformation[_droneGameObject.IndexOf(boid)].dronePosition.rotationDroneRoll = simulationInformations[4];
+                            droneInformation[_droneGameObject.IndexOf(boid)].dronePosition.rotationDronePitch = simulationInformations[5];
+                        }
+                    }
+                    
+                    //send it to server ok
+
+                    //wait to receive the new position of the drone ??????TO DO
+
+                    //update the position of the drone
+                    foreach (BoidController boid in _droneGameObject)
+                    {
+                        boid.transform.position = new Vector3(droneInformation[_droneGameObject.IndexOf(boid)].dronePosition.positionDroneX, droneInformation[_droneGameObject.IndexOf(boid)].dronePosition.positionDroneZ, droneInformation[_droneGameObject.IndexOf(boid)].dronePosition.positionDroneY);
+                        boid.transform.rotation = Quaternion.Euler(droneInformation[_droneGameObject.IndexOf(boid)].dronePosition.rotationDroneRoll, droneInformation[_droneGameObject.IndexOf(boid)].dronePosition.rotationDroneYaw, droneInformation[_droneGameObject.IndexOf(boid)].dronePosition.rotationDronePitch);
+                    }
+
+                    //do the reception of the server 
 
                 }
                 
@@ -147,6 +192,7 @@ public class DroneSwarmControle : MonoBehaviour
     {
         droneInitialized = true;
         numberOfDrones = droneInformation.Count;
+        _droneGameObject = new List<BoidController>();
         for (int i = 0; i < numberOfDrones; i++)
         {
             Vector3 posDrone = new Vector3(droneInformation[i].dronePosition.positionDroneX, droneInformation[i].dronePosition.positionDroneZ, droneInformation[i].dronePosition.positionDroneY);
@@ -154,12 +200,14 @@ public class DroneSwarmControle : MonoBehaviour
 
             Quaternion rotationQuaternion = Quaternion.Euler(rotDrone); // Convertit les angles Euler en Quaternion
 
-            GameObject drone = Instantiate(DronePrefab, posDrone, rotationQuaternion);
+            GameObject droneInstance = Instantiate(boidPrefab.gameObject, posDrone, rotationQuaternion);
 
-            droneObjects.Add(drone);
-            drone.GetComponent<DroneBehavior>().Initialiser(droneInformation[i]);
+            _droneGameObject.Add(droneInstance.GetComponent<BoidController>());
+            //droneInstance.GetComponent<DroneBehavior>().Initialiser(droneInformation[i]); what is this for ?
+            droneInstance.GetComponent<BoidController>().droneIP = droneInformation[i].droneIP;
         }
     }
+    
 
     void TakOffAndLandManagement()
     {

@@ -21,7 +21,8 @@ public class DronePosition
     public float positionDroneY = 0;
     public float positionDroneZ = 0;
     public float rotationDroneYaw = 0;
-
+    public float rotationDroneRoll = 0;
+    public float rotationDronePitch = 0;
 }
 
 public class DroneVelocity
@@ -54,6 +55,8 @@ public class DronePositionResponse
 [System.Serializable]
 public class DroneSpeedData
 {
+    //public float time;    maybe?
+    public string droneIP;
     public float Vx;
     public float Vy;
     public float Vz;

@@ -11,6 +11,7 @@ using System.Collections.Concurrent;
 using System.Globalization;
 using System.Text.RegularExpressions;
 using UnityEngine.Windows;
+using System.Linq;
 public class DroneSimulationServer : MonoBehaviour
 {
 
@@ -28,7 +29,7 @@ public class DroneSimulationServer : MonoBehaviour
     private bool droneCreatedSent = false;
     //add link to the game object for the drone space 
     public Vector3 droneSpaceOrigin = new Vector3(0, 0, 0);
-    public Vector3 droneSpaceEnd = new Vector3(5, 5, 5);
+    public Vector3 droneSpaceEnd = new Vector3(1, 1, 1);
     void Awake()
     {
         
@@ -81,7 +82,7 @@ public class DroneSimulationServer : MonoBehaviour
     async Task ReceiveMessagesAsyncServer(TcpClient client, CancellationToken token)
     {
         var stream = client.GetStream();
-        byte[] buffer = new byte[1024];
+        byte[] buffer = new byte[2048*4]; //originally 1024
 
         try
         {
@@ -153,10 +154,27 @@ public class DroneSimulationServer : MonoBehaviour
         {
             if (messagesFromClientQueue.TryDequeue(out messageFromClient))
             {
+                Debug.Log("message from client :" + messageFromClient + $" sent by {connectedClient}");
+                List<DroneSpeedData> droneSpeedDataList = JsonConvert.DeserializeObject<List<DroneSpeedData>>(messageFromClient);
+                
+                foreach (var droneSpeedData in droneSpeedDataList)
+                {
+                    Debug.Log($"Drone {droneSpeedData.droneIP} has speed: Vx={droneSpeedData.Vx}, Vy={droneSpeedData.Vy}, Vz={droneSpeedData.Vz}, yaw_rate={droneSpeedData.yaw_rate}");
+                }
+                messagesToClientQueue.Enqueue(ToJson(UpdateDronePositions(droneServerInformation, droneSpeedDataList,Time.deltaTime)));
+                messageAvailable.Set();
+                droneCreatedSent = true;
+
+            }
+            
+
+            //ping test
+            /*if (messagesFromClientQueue.TryDequeue(out messageFromClient))
+            {
                 Debug.Log($"Server received: {messageFromClient}");
 
                 int number = ExtractNumber(messageFromClient);
-                if (number < 100)
+                if (number < 1000)
                 {
                     int nextNumber = number + 1;
                     string messageToSend = nextNumber.ToString();
@@ -164,7 +182,7 @@ public class DroneSimulationServer : MonoBehaviour
                     messageAvailable.Set(); // Signal that a message is ready to be sent
                     Debug.Log($"Server sending number: {nextNumber}");
                 }
-            }
+            }*/
         }
     }
     // Utility method to extract numbers from server messages
@@ -220,6 +238,37 @@ public class DroneSimulationServer : MonoBehaviour
         return  Newtonsoft.Json.JsonConvert.SerializeObject(dronePositionResponse);
     }
 
+    //i dont think this is very optimized
+    private List<DroneInformation> UpdateDronePositions(List<DroneInformation> droneServerInformations, List<DroneSpeedData> droneSpeedDataList, float deltaTime)
+    {
+        // Iterate through each drone information
+        foreach (var droneInfo in droneServerInformations)
+        {
+            // Find the matching speed data based on droneIP
+            var matchingSpeedData = droneSpeedDataList.FirstOrDefault(speedData => speedData.droneIP == droneInfo.droneIP);
+
+            // If matching speed data is found, update the drone's position
+            if (matchingSpeedData != null)
+            {
+                droneInfo.dronePosition.positionDroneX += matchingSpeedData.Vx * deltaTime;
+                droneInfo.dronePosition.positionDroneY += matchingSpeedData.Vy * deltaTime;
+                droneInfo.dronePosition.positionDroneZ += matchingSpeedData.Vz * deltaTime;
+                droneInfo.dronePosition.rotationDroneYaw += matchingSpeedData.yaw_rate * deltaTime;
+
+                // Ensure the yaw rotation stays within 0-360 degrees
+                while (droneInfo.dronePosition.rotationDroneYaw >= 360f) droneInfo.dronePosition.rotationDroneYaw -= 360f;
+                while (droneInfo.dronePosition.rotationDroneYaw < 0f) droneInfo.dronePosition.rotationDroneYaw += 360f;
+            }
+        }
+        // Optional: Check for bounds or limits to drone movement here
+        // This could involve checking if drones are within a predefined area
+        // and adjusting their positions or velocities accordingly
+
+        return droneServerInformations;
+    }
+
+    
+
     void OnDestroy()
     {
         // Ensure the listener is stopped when the GameObject is destroyed
@@ -227,39 +276,3 @@ public class DroneSimulationServer : MonoBehaviour
         cancellationTokenSource.Cancel(); // Signal all tasks to cancel
     }
 }
-//pseudocode
-/*var messagesFromClientQueue = new ConcurrentQueue<string>();
-var messagesToClientQueue = new ConcurrentQueue<string>();
-void Start()
-{
-    //create TCP server
-    //start task of ServerListener
-    //start task of ServerSender
-}
-void Update()
-{
-    //try to deque messages from messagesFromClientQueue
-    //do somthing with the message (get the direction of what the message is telling it to do)
-    //moddify some internal values with the direction of the message
-    //make a new json message 
-    //que it on the messagesToClientQueue
-}
-public void TCPServerListener()
-{
-    while (true)
-    {
-        //listen for the client 
-        //decode the message
-        //enque the decrepted message
-    }
-}
-public void TCPServerSender()
-{
-    while (true)
-    {
-        //try to deque messagesToClientQueue
-        //encode message 
-        //send it via the TCPserver to the client
-    }
-}*/
-// Using concurrent collections for thread-safe operations

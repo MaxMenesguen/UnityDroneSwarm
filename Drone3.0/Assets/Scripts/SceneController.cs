@@ -8,8 +8,12 @@ public class SceneController : MonoBehaviour
     //implement later
     //public GameObject obstaclePrefab;
     public GameObject BoidBoundingBox;
-    public int sizeOfBoidBoundingBox = 40;
+    public GameObject SphereObstaclePrefab;
+    public float sizeOfBoidBoundingBox = 4f;
     public int spawnBoids = 100;
+    public int numberOfObstacle = 10;
+    public float resetBoidTolerancePurcentage = 0.1f;
+
 
     private List<BoidController> _boids;
 
@@ -36,9 +40,17 @@ public class SceneController : MonoBehaviour
         }
         _boids = new List<BoidController>();
 
+        for (int i = 0; i < numberOfObstacle; i++)
+        {
+            var obstacleInstance = Instantiate(SphereObstaclePrefab);
+            float sizeObstacle = Mathf.Pow(Random.Range(0f, 1f), 3) * (sizeOfBoidBoundingBox) / 4;
+            obstacleInstance.transform.localScale = new Vector3(sizeObstacle, sizeObstacle, sizeObstacle);
+            obstacleInstance.transform.localPosition += new Vector3(Random.Range(-sizeOfBoidBoundingBox/2, sizeOfBoidBoundingBox / 2), Random.Range(-sizeOfBoidBoundingBox / 2, sizeOfBoidBoundingBox / 2), Random.Range(-sizeOfBoidBoundingBox / 2, sizeOfBoidBoundingBox / 2));
+        }
+
         for (int i = 0; i < spawnBoids; i++)
         {
-            SpawnBoid(boidPrefab.gameObject, 0);
+            SpawnBoid(boidPrefab.gameObject, i);
         }
     }
 
@@ -46,25 +58,30 @@ public class SceneController : MonoBehaviour
     {
         foreach (BoidController boid in _boids)
         {
-            boid.SimulateMovement(_boids, Time.deltaTime);
-            if (boid.transform.position.x > sizeOfBoidBoundingBox +20 || boid.transform.position.x < -(sizeOfBoidBoundingBox + 20) || boid.transform.position.y > sizeOfBoidBoundingBox + 20 || boid.transform.position.y < -(sizeOfBoidBoundingBox + 20) || boid.transform.position.z > sizeOfBoidBoundingBox + 20 || boid.transform.position.z < -(sizeOfBoidBoundingBox + 20))
+            boid.SimulateMovement(_boids, sizeOfBoidBoundingBox, Time.deltaTime);
+            if (boid.transform.position.x > sizeOfBoidBoundingBox/2+(sizeOfBoidBoundingBox*resetBoidTolerancePurcentage/2) 
+                || boid.transform.position.x < -(sizeOfBoidBoundingBox/2 + (sizeOfBoidBoundingBox * resetBoidTolerancePurcentage/2)) 
+                || boid.transform.position.y > sizeOfBoidBoundingBox/2 + (sizeOfBoidBoundingBox * resetBoidTolerancePurcentage/2) 
+                || boid.transform.position.y < -(sizeOfBoidBoundingBox/2 + (sizeOfBoidBoundingBox * resetBoidTolerancePurcentage/2)) 
+                || boid.transform.position.z > sizeOfBoidBoundingBox/2 + (sizeOfBoidBoundingBox * resetBoidTolerancePurcentage/2) 
+                || boid.transform.position.z < -(sizeOfBoidBoundingBox/2 + (sizeOfBoidBoundingBox * resetBoidTolerancePurcentage/2)))
             {
-                boid.transform.position = new Vector3(Random.Range(-10, 10), Random.Range(-10, 10), Random.Range(-10, 10));
-                //debugging
-                //boid.transform.position = new Vector3(0, 0, 0);
+                boid.transform.position = new Vector3(Random.Range(-sizeOfBoidBoundingBox / 2, sizeOfBoidBoundingBox / 2), Random.Range(-sizeOfBoidBoundingBox / 2, sizeOfBoidBoundingBox / 2), Random.Range(-sizeOfBoidBoundingBox / 2, sizeOfBoidBoundingBox / 2));
+                Debug.Log("Boid reset");
             }
             
 
         }
     }
 
-    private void SpawnBoid(GameObject prefab, int swarmIndex)
+    private void SpawnBoid(GameObject prefab, int droneIP)
     {
         var boidInstance = Instantiate(prefab);
-        boidInstance.transform.localPosition += new Vector3(Random.Range(-10, 10), Random.Range(-10, 10), Random.Range(-10, 10));
+        boidInstance.transform.localPosition = new Vector3(Random.Range(-sizeOfBoidBoundingBox / 2, sizeOfBoidBoundingBox / 2), Random.Range(-sizeOfBoidBoundingBox / 2, sizeOfBoidBoundingBox / 2), Random.Range(-sizeOfBoidBoundingBox / 2, sizeOfBoidBoundingBox / 2));
         //debugging
         //boidInstance.transform.localPosition += new Vector3(0,0,0);
         _boids.Add(boidInstance.GetComponent<BoidController>());
+        boidInstance.GetComponent<BoidController>().droneIP = droneIP.ToString();
     }
 
 }
