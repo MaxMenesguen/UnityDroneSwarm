@@ -168,9 +168,10 @@ public class BoidController : MonoBehaviour
         Vector3 currentRotation = transform.rotation.eulerAngles;
         Quaternion deltaRotation = transform.rotation * Quaternion.Inverse(previousRotation);
         deltaRotation.ToAngleAxis(out float angle, out Vector3 axis);
-        angle = angle > 180 ? angle - 360 : angle; // Convert angle to range -180 to 180
+        if (axis.y < 0) angle = -angle; // If axis points down, reverse the angle
+        angle = angle > 180 ? angle - 360 : (angle < -180 ? angle + 360 : angle); // Normalize angle to -180 to 180
         float angularVelocity = angle / Time.deltaTime; // In degrees per second
-        
+
 
         transform.rotation = previousRotation; // Revert rotation !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
 

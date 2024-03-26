@@ -156,11 +156,11 @@ public class DroneSimulationServer : MonoBehaviour
             {
                 Debug.Log("message from client :" + messageFromClient + $" sent by {connectedClient}");
                 List<DroneSpeedData> droneSpeedDataList = JsonConvert.DeserializeObject<List<DroneSpeedData>>(messageFromClient);
-                
-                foreach (var droneSpeedData in droneSpeedDataList)
+                //Debug
+                /*foreach (var droneSpeedData in droneSpeedDataList)
                 {
                     Debug.Log($"Drone {droneSpeedData.droneIP} has speed: Vx={droneSpeedData.Vx}, Vy={droneSpeedData.Vy}, Vz={droneSpeedData.Vz}, yaw_rate={droneSpeedData.yaw_rate}");
-                }
+                }*/
                 messagesToClientQueue.Enqueue(ToJson(UpdateDronePositions(droneServerInformation, droneSpeedDataList,Time.deltaTime)));
                 messageAvailable.Set();
                 droneCreatedSent = true;
@@ -203,9 +203,9 @@ public class DroneSimulationServer : MonoBehaviour
                 dronePosition = new DronePosition
                 {
                     positionInfo = true,
-                    positionDroneX = (float)Math.Round(UnityEngine.Random.Range(droneSpaceOrigin[0], droneSpaceEnd[0]), 2),
-                    positionDroneY = (float)Math.Round(UnityEngine.Random.Range(droneSpaceOrigin[1], droneSpaceEnd[1]), 2),
-                    positionDroneZ = (float)Math.Round(UnityEngine.Random.Range(droneSpaceOrigin[2], droneSpaceEnd[2]), 2),
+                    positionDroneX = 0,//(float)Math.Round(UnityEngine.Random.Range(droneSpaceOrigin[0], droneSpaceEnd[0]), 2),
+                    positionDroneY = 0,//(float)Math.Round(UnityEngine.Random.Range(droneSpaceOrigin[1], droneSpaceEnd[1]), 2),
+                    positionDroneZ = 0,//(float)Math.Round(UnityEngine.Random.Range(droneSpaceOrigin[2], droneSpaceEnd[2]), 2),
                     rotationDroneYaw = (int)UnityEngine.Random.Range(0, 360)
                 },
                 droneVelocity = new DroneVelocity
@@ -215,7 +215,7 @@ public class DroneSimulationServer : MonoBehaviour
                     vitesseDroneZ = 0,
                     vitesseDroneYaw = 0
                 }
-            });
+            }) ;
         }
         return droneServerInformation;
     }

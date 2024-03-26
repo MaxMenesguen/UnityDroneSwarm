@@ -156,7 +156,7 @@ public class DroneSwarmControle : MonoBehaviour
                     //update the position of the drone
                     foreach (BoidController boid in _droneGameObject)
                     {
-                        boid.transform.position = new Vector3(droneInformation[_droneGameObject.IndexOf(boid)].dronePosition.positionDroneX, droneInformation[_droneGameObject.IndexOf(boid)].dronePosition.positionDroneZ, droneInformation[_droneGameObject.IndexOf(boid)].dronePosition.positionDroneY);
+                        boid.transform.position = new Vector3(droneInformation[_droneGameObject.IndexOf(boid)].dronePosition.positionDroneX, droneInformation[_droneGameObject.IndexOf(boid)].dronePosition.positionDroneY, droneInformation[_droneGameObject.IndexOf(boid)].dronePosition.positionDroneZ);
                         boid.transform.rotation = Quaternion.Euler(droneInformation[_droneGameObject.IndexOf(boid)].dronePosition.rotationDroneRoll, droneInformation[_droneGameObject.IndexOf(boid)].dronePosition.rotationDroneYaw, droneInformation[_droneGameObject.IndexOf(boid)].dronePosition.rotationDronePitch);
                     }
 
