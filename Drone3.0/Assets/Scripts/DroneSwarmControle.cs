@@ -9,6 +9,9 @@ public class DroneSwarmControle : MonoBehaviour
     //[SerializeField] private GameObject DronePrefab; // Référence au prefab du drone
     public BoidController boidPrefab;
     [SerializeField] private GameObject ClientAndServerPrefab;
+    [SerializeField] private GameObject BoidBoundingBox;
+    [SerializeField] private GameObject SphereObstaclePrefab;
+    [SerializeField] private GameObject AtractionObjectPrefab;
 
     [SerializeField] private bool APIRequest = false;
     [SerializeField] private bool APITakeOff = false;
@@ -18,6 +21,8 @@ public class DroneSwarmControle : MonoBehaviour
     [SerializeField] private Vector3 GoToPosition = new Vector3(0, 0, 0);
     [SerializeField] private bool droneSimulation = false;
     [SerializeField] private float sizeOfBoidBoundingBox = 2f; // size of the bounding box for the boids
+    [SerializeField] private int numberOfObstacle = 10; // Number of obstacles to create
+    [SerializeField] private bool CreateAtractionObject = false; // Create an object that attracts the boids
     // Public property to access sizeOfBoidBoundingBox
     public float SizeOfBoidBoundingBox
     {
@@ -56,6 +61,38 @@ public class DroneSwarmControle : MonoBehaviour
     //maxspeed of drone
     public float maxSpeed = 0.2f;
     public float closeEnoughDistance = 0.2f;
+
+    public void Start()
+    {
+        // Set the scale of the BoidBoundingBox
+        BoidBoundingBox.transform.localScale = new Vector3(sizeOfBoidBoundingBox, sizeOfBoidBoundingBox, sizeOfBoidBoundingBox);
+
+        // Array of positions for bounding boxes
+        Vector3[] positions = new Vector3[]
+        {
+        new Vector3(sizeOfBoidBoundingBox, 0, 0),
+        new Vector3(-sizeOfBoidBoundingBox, 0, 0),
+        new Vector3(0, sizeOfBoidBoundingBox, 0),
+        new Vector3(0, -sizeOfBoidBoundingBox, 0),
+        new Vector3(0, 0, sizeOfBoidBoundingBox),
+        new Vector3(0, 0, -sizeOfBoidBoundingBox)
+        };
+
+        // Instantiate bounding boxes at each position
+        foreach (Vector3 position in positions)
+        {
+            Instantiate(BoidBoundingBox, position, Quaternion.identity);
+        }
+
+        for (int i = 0; i < numberOfObstacle; i++)
+        {
+            var obstacleInstance = Instantiate(SphereObstaclePrefab);
+            float sizeObstacle = Mathf.Pow(Random.Range(0f, 1f), 3) * (sizeOfBoidBoundingBox) / 4;
+            obstacleInstance.transform.localScale = new Vector3(sizeObstacle, sizeObstacle, sizeObstacle);
+            obstacleInstance.transform.localPosition += new Vector3(Random.Range(-sizeOfBoidBoundingBox / 2, sizeOfBoidBoundingBox / 2), Random.Range(-sizeOfBoidBoundingBox / 2, sizeOfBoidBoundingBox / 2), Random.Range(-sizeOfBoidBoundingBox / 2, sizeOfBoidBoundingBox / 2));
+        }
+    }
+
     private void Update()
     {
         #region IRL Drone Controle
@@ -161,7 +198,20 @@ public class DroneSwarmControle : MonoBehaviour
                     }
 
                     //do the reception of the server 
-
+                    if (CreateAtractionObject && GameObject.FindWithTag("AtractionGameObject") ==null)
+                    {
+                        Instantiate(AtractionObjectPrefab);
+                    }
+                    else if (!CreateAtractionObject)
+                    {
+                        GameObject myObject = GameObject.FindWithTag("AtractionGameObject");
+                        if (myObject != null)
+                        {
+                            Destroy(myObject);
+                            
+                        }
+                        
+                    }
                 }
                 
             }

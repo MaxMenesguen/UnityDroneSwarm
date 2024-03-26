@@ -212,8 +212,8 @@ Transform:
   m_PrefabAsset: {fileID: 0}
   m_GameObject: {fileID: 946188596}
   serializedVersion: 2
-  m_LocalRotation: {x: 0.15189138, y: -0.41225424, z: 0.06991805, w: 0.8955931}
-  m_LocalPosition: {x: 20.768536, y: 16.19255, z: -8.766441}
+  m_LocalRotation: {x: 0.084382385, y: -0.7277237, z: 0.09380292, w: 0.6741653}
+  m_LocalPosition: {x: 1.9476963, y: 0.55236626, z: -0.05187871}
   m_LocalScale: {x: 1, y: 1, z: 1}
   m_ConstrainProportionsScale: 0
   m_Children: []
@@ -523,6 +523,12 @@ MonoBehaviour:
     type: 3}
   ClientAndServerPrefab: {fileID: 2481771991020374289, guid: 70f280ef822060046be4e65a2df6a5c2,
     type: 3}
+  BoidBoundingBox: {fileID: 3629744250974256927, guid: fbbcea358b6bb7345b6c727ea1f241b4,
+    type: 3}
+  SphereObstaclePrefab: {fileID: 6164314110696678032, guid: 3ee945ffbd1b2234b86d3777f3fc4d02,
+    type: 3}
+  AtractionObjectPrefab: {fileID: 3921596189924253741, guid: f86c6e03b7079974d9a63078e759952e,
+    type: 3}
   APIRequest: 0
   APITakeOff: 0
   droneAPITracking: 0
@@ -531,7 +537,9 @@ MonoBehaviour:
   GoToPosition: {x: 1, y: 0, z: 0.5}
   droneSimulation: 1
   sizeOfBoidBoundingBox: 2
-  numberOfDrones: 1
+  numberOfObstacle: 50
+  CreateAtractionObject: 0
+  numberOfDrones: 12
   maxSpeed: 0.2
   closeEnoughDistance: 0.2
 --- !u!4 &2071358412
@@ -579,6 +587,12 @@ PrefabInstance:
       objectReference: {fileID: 0}
     - target: {fileID: 4376088405896570562, guid: 094c8ce127113894fa6df2e75618b5c3,
         type: 3}
+      propertyPath: AtractionObjectPrefab
+      value: 
+      objectReference: {fileID: 3921596189924253741, guid: f86c6e03b7079974d9a63078e759952e,
+        type: 3}
+    - target: {fileID: 4376088405896570562, guid: 094c8ce127113894fa6df2e75618b5c3,
+        type: 3}
       propertyPath: sizeOfBoidBoundingBox
       value: 2
       objectReference: {fileID: 0}
@@ -590,37 +604,37 @@ PrefabInstance:
     - target: {fileID: 5814258911570994376, guid: 094c8ce127113894fa6df2e75618b5c3,
         type: 3}
       propertyPath: m_LocalPosition.x
-      value: 0
+      value: 1.6924025
       objectReference: {fileID: 0}
     - target: {fileID: 5814258911570994376, guid: 094c8ce127113894fa6df2e75618b5c3,
         type: 3}
       propertyPath: m_LocalPosition.y
-      value: 0
+      value: 0.3339715
       objectReference: {fileID: 0}
     - target: {fileID: 5814258911570994376, guid: 094c8ce127113894fa6df2e75618b5c3,
         type: 3}
       propertyPath: m_LocalPosition.z
-      value: 0
+      value: -0.08944234
       objectReference: {fileID: 0}
     - target: {fileID: 5814258911570994376, guid: 094c8ce127113894fa6df2e75618b5c3,
         type: 3}
       propertyPath: m_LocalRotation.w
-      value: 1
+      value: -0.7084784
       objectReference: {fileID: 0}
     - target: {fileID: 5814258911570994376, guid: 094c8ce127113894fa6df2e75618b5c3,
         type: 3}
       propertyPath: m_LocalRotation.x
-      value: 0
+      value: 0.03951488
       objectReference: {fileID: 0}
     - target: {fileID: 5814258911570994376, guid: 094c8ce127113894fa6df2e75618b5c3,
         type: 3}
       propertyPath: m_LocalRotation.y
-      value: 0
+      value: 0.7036631
       objectReference: {fileID: 0}
     - target: {fileID: 5814258911570994376, guid: 094c8ce127113894fa6df2e75618b5c3,
         type: 3}
       propertyPath: m_LocalRotation.z
-      value: 0
+      value: 0.036811814
       objectReference: {fileID: 0}
     - target: {fileID: 5814258911570994376, guid: 094c8ce127113894fa6df2e75618b5c3,
         type: 3}

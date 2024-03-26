@@ -16,6 +16,8 @@ public class BoidController : MonoBehaviour
     private Vector3 perlinNoiseSeed;
     private bool isOutOfBound = false;
     Vector3 outOfBound = Vector3.zero;
+
+    //Tag : AtractionGameObject
     void Start()
     {
         // Initialize Perlin noise seed with a random value for each boid
@@ -152,6 +154,20 @@ public class BoidController : MonoBehaviour
         // Base speed, adjust as needed
         float adjustedRotationSpeed = SteeringSpeed * rotationSpeedModifier;
 
+        //atraction to AtractionObject
+        GameObject myObject = GameObject.FindWithTag("AtractionGameObject");
+        if (myObject != null)
+        {
+            // Access the object's location
+            Vector3 location = myObject.transform.position;
+            // Calculate the direction to the object
+            Vector3 directionToObject = location - transform.position;
+            // Normalize the direction
+            directionToObject.Normalize();
+            // Add the direction to the steering
+            steering += directionToObject*0.4f;
+        }
+
         var previousRotation = transform.rotation;
 
         //apply steering
@@ -173,7 +189,7 @@ public class BoidController : MonoBehaviour
         float angularVelocity = angle / Time.deltaTime; // In degrees per second
 
 
-        transform.rotation = previousRotation; // Revert rotation !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
+        //transform.rotation = previousRotation; // Revert rotation !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
 
         //Debug.Log("Angular Velocity :"+angularVelocity);
         
@@ -184,7 +200,7 @@ public class BoidController : MonoBehaviour
         // Calculate velocity
         Vector3 velocity = (transform.position - previousPosition) / Time.deltaTime;
         
-        transform.position = previousPosition; // Revert position !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
+        //transform.position = previousPosition; // Revert position !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
 
         Debug.DrawLine(transform.position, transform.position + velocity * distanceToObstacleDetection, Color.green);
 

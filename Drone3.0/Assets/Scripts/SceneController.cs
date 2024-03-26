@@ -9,6 +9,7 @@ public class SceneController : MonoBehaviour
     //public GameObject obstaclePrefab;
     public GameObject BoidBoundingBox;
     public GameObject SphereObstaclePrefab;
+    public GameObject AtractionObjectPrefab;
     public float sizeOfBoidBoundingBox = 4f;
     public int spawnBoids = 100;
     public int numberOfObstacle = 10;
@@ -47,6 +48,8 @@ public class SceneController : MonoBehaviour
             obstacleInstance.transform.localScale = new Vector3(sizeObstacle, sizeObstacle, sizeObstacle);
             obstacleInstance.transform.localPosition += new Vector3(Random.Range(-sizeOfBoidBoundingBox/2, sizeOfBoidBoundingBox / 2), Random.Range(-sizeOfBoidBoundingBox / 2, sizeOfBoidBoundingBox / 2), Random.Range(-sizeOfBoidBoundingBox / 2, sizeOfBoidBoundingBox / 2));
         }
+
+        Instantiate(AtractionObjectPrefab);
 
         for (int i = 0; i < spawnBoids; i++)
         {
