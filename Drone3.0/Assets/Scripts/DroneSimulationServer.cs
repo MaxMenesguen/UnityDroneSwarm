@@ -198,7 +198,7 @@ public class DroneSimulationServer : MonoBehaviour
         {
             droneServerInformation.Add(new DroneInformation
             {
-                droneIP = "SimulationDrone" + (i + 1).ToString(),
+                droneIP = $"SimulationDrone{i+1}", //+ (i + 1).ToString(),
                 takeoff = true,
                 dronePosition = new DronePosition
                 {
