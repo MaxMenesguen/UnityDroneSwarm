@@ -1,4 +1,4 @@
-# Drone Swarm Simulator
+# Drone Swarm 
 
 ## Description
 
