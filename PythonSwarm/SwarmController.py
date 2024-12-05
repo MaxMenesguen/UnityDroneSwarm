@@ -49,16 +49,22 @@ class SwarmController:
         log_config.add_variable('stateEstimate.z', 'FP16')
         log_config.add_variable('stateEstimate.yaw', 'FP16')
 
-        def position_callback(timestamp, data, logconf):    
-            self.positions[uri] = {
-                'x': data['stateEstimate.x'],
-                'y': data['stateEstimate.y'],
-                'z': data['stateEstimate.z'],
-                'yaw': data['stateEstimate.yaw']
-            }
-            #self.positions_from_cf_queue.put({uri: self.positions[uri]})  # Add to shared queue
-            self.positions_from_cf_queue.put(self.positions.copy())
-            #logger.info(f"Drone {uri} Position: {self.positions[uri]}")
+        def position_callback(timestamp, data, logconf):
+            # Update the drone's position in the positions dictionary as an array
+            self.positions[uri] = [
+                data['stateEstimate.x'],
+                data['stateEstimate.y'],
+                data['stateEstimate.z'],
+                data['stateEstimate.yaw']
+            ]
+
+            if len(self.positions) == len(self.uris):
+                # Prepare the "Positions" dictionary structure with a type field
+                positions_message = {
+                    "type": "Positions",
+                    "Positions": self.positions.copy()
+                }
+                self.positions_from_cf_queue.put(positions_message)  # Add to the queue
 
         scf.cf.log.add_config(log_config)
         log_config.data_received_cb.add_callback(position_callback)
@@ -67,6 +73,24 @@ class SwarmController:
     def start_logging(self):
         """Start logging for all drones in the swarm."""
         self.swarm.parallel_safe(self.log_positions)
+    
+    def takeoff(self, height, duration):
+        """Command all drones in the swarm to take off."""
+        def takeoff_drone(scf):
+            commander = scf.cf.high_level_commander
+            commander.takeoff(height, duration)
+        
+        self.swarm.parallel_safe(takeoff_drone)
+        logger.info(f"Takeoff command issued: height={height}m, duration={duration}s")
+
+    def land(self, height, duration):
+        """Command all drones in the swarm to land."""
+        def land_drone(scf):
+            commander = scf.cf.high_level_commander
+            commander.land(height, duration)
+        
+        self.swarm.parallel_safe(land_drone)
+        logger.info(f"Land command issued: height={height}m, duration={duration}s")
 
     def run(self):
         """Run the swarm controller in a thread."""

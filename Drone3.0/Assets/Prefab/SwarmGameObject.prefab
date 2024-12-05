@@ -1,0 +1,69 @@
+%YAML 1.1
+%TAG !u! tag:unity3d.com,2011:
+--- !u!1 &2312109956877716730
+GameObject:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  serializedVersion: 6
+  m_Component:
+  - component: {fileID: 7128864682163022471}
+  - component: {fileID: 7655527870743185256}
+  m_Layer: 0
+  m_Name: SwarmGameObject
+  m_TagString: Untagged
+  m_Icon: {fileID: 0}
+  m_NavMeshLayer: 0
+  m_StaticEditorFlags: 0
+  m_IsActive: 1
+--- !u!4 &7128864682163022471
+Transform:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 2312109956877716730}
+  serializedVersion: 2
+  m_LocalRotation: {x: 0, y: 0, z: 0, w: 1}
+  m_LocalPosition: {x: 0, y: 0, z: 0}
+  m_LocalScale: {x: 1, y: 1, z: 1}
+  m_ConstrainProportionsScale: 0
+  m_Children: []
+  m_Father: {fileID: 0}
+  m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
+--- !u!114 &7655527870743185256
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 2312109956877716730}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: b07d1b75d807f114a9565c571cc1b5b9, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: 
+  boidPrefab: {fileID: -5828521567424330780, guid: fba25ffac228d784b89548f25c2e69a3,
+    type: 3}
+  ClientAndServerPrefab: {fileID: 2481771991020374289, guid: 70f280ef822060046be4e65a2df6a5c2,
+    type: 3}
+  IRLClient: {fileID: 7217276755282976057, guid: 5c72938c90db7524ca78244dbbaf840d,
+    type: 3}
+  BoidBoundingBox: {fileID: 3629744250974256927, guid: fbbcea358b6bb7345b6c727ea1f241b4,
+    type: 3}
+  SphereObstaclePrefab: {fileID: 6164314110696678032, guid: 3ee945ffbd1b2234b86d3777f3fc4d02,
+    type: 3}
+  AtractionObjectPrefab: {fileID: 3921596189924253741, guid: f86c6e03b7079974d9a63078e759952e,
+    type: 3}
+  droneSimulation: 0
+  droneIRL: 1
+  takeOff: 0
+  land: 0
+  sizeOfBoidBoundingBox: 100
+  numberOfObstacle: 0
+  CreateAtractionObject: 0
+  numberOfSimuDrones: 4
+  referenceToDroneIRLClient: {fileID: 0}
+  maxSpeed: 0.2
+  closeEnoughDistance: 0.2

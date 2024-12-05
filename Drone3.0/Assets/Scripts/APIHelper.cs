@@ -17,7 +17,7 @@ public class APIHelper : MonoBehaviour
 
     //public static string APILocalhost = "172.20.10.4:8000";
     //public static string APILocalhost = "192.168.2.233:8000";
-    public static string APILocalhost = "172.21.73.11:8000";
+    public static string APILocalhost = "127.0.0.1:8000";
 
     #region API Get Classes
 

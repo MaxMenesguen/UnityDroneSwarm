@@ -1,7 +1,8 @@
 using System.Collections.Generic;
+using static DroneCommandData;
 
 #region Information of the drones region
-public class DroneInformation  //maybe attache to game object
+public class DroneInformation  
 {
     public string droneIP;
     public bool takeoff = false;
@@ -46,16 +47,33 @@ public class DroneApiResponse// peut être utilliser les trucs de noé pour les st
 [System.Serializable]
 public class DronePositionResponse
 {
-    public Dictionary<string, float[]> Positions;
+    public string type;  // The type of message, e.g., "Positions"
+    public Dictionary<string, float[]> Positions;  // Position data
+    public string additionalInformation;  // Optional field for future use
 }
 
 //this is for the post request 
 //helps json to be created
 
 [System.Serializable]
+public class DroneInstruction
+{
+    public string type; // Command type: "speed", "takeoff", "land", etc.
+    public DroneSpeedDataList droneSpeedDataList; // For "speed" commands
+    public DroneCommandData commandData; // For "takeoff", "land", etc.
+}
+
+[System.Serializable]
+public class DroneCommandData
+{
+    public string command; // Specific command (e.g., "takeoff", "land")
+    public string targetDrone; // Drone ID for individual commands (optional)
+    public Dictionary<string, object> parameters; // Additional parameters if needed
+}
+[System.Serializable]
 public class DroneSpeedData
 {
-    //public float time;    maybe?
+    
     public string droneIP;
     public float Vx;
     public float Vy;

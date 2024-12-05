@@ -17,11 +17,12 @@ using Newtonsoft.Json;
 
 public class DroneSimulationClient : MonoBehaviour
 {
+    #region variables
     public DroneSwarmControle referenceToDroneSwarmControle;
 
     private TcpClient client;
     private NetworkStream stream;
-    private int numberOfDrones = 0;
+    public int numberOfSimuDrones = 0;
     private float sizeOfBoidBoundingBox =0f;
     private CancellationTokenSource cancellationTokenSource = new CancellationTokenSource();
     private ConcurrentQueue<string> messagesFromServerQueue = new ConcurrentQueue<string>();
@@ -29,6 +30,7 @@ public class DroneSimulationClient : MonoBehaviour
     public static bool droneClientCreated = false;
     public static List<DroneInformation> droneInformationClient = new List<DroneInformation>();
     private ManualResetEventSlim messageAvailable = new ManualResetEventSlim(false);
+    #endregion
     // Configuration
     private string serverIP = "127.0.0.1";
     private int serverPort = 8080;
@@ -38,14 +40,14 @@ public class DroneSimulationClient : MonoBehaviour
     void Start()
     {
         referenceToDroneSwarmControle = FindObjectOfType<DroneSwarmControle>();
-        numberOfDrones = referenceToDroneSwarmControle.NumberOfDrones;
+        numberOfSimuDrones = referenceToDroneSwarmControle.NumberOfSimuDrones;
         sizeOfBoidBoundingBox = referenceToDroneSwarmControle.SizeOfBoidBoundingBox; //still need to setup to use it 
         // Start the async operation without awaiting it
         Task.Run(async () =>
         {
             try
             {
-                await ConnectToServer(numberOfDrones, sizeOfBoidBoundingBox, cancellationTokenSource.Token);
+                await ConnectToServer(numberOfSimuDrones, sizeOfBoidBoundingBox, cancellationTokenSource.Token);
             }
             catch (Exception ex)
             {
@@ -59,10 +61,12 @@ public class DroneSimulationClient : MonoBehaviour
 
     async Task ConnectToServer(int numberOfDrones,float sizeOfBoidBoundingBox, CancellationToken token)
     {
-        bool conect = false;
+        
         try
         {
+            
             client = new TcpClient(serverIP, serverPort);
+            
             Debug.Log("Connected to the server.");
 
             stream = client.GetStream();
@@ -74,49 +78,18 @@ public class DroneSimulationClient : MonoBehaviour
             Debug.Log("Sent: " + messageToSend);
 
             // Listen for a response from the server
-            buffer = new byte[2048 * 4];
+            buffer = new byte[2048 * 16];
             int bytesRead = await stream.ReadAsync(buffer, 0, buffer.Length);
             string response = Encoding.ASCII.GetString(buffer, 0, bytesRead);
 
-            if (response.StartsWith("{\"Positions\":{\"SimulationDrone1\":"))
-            {
-                
-                conect = true;
-                messagesFromServerQueue.Enqueue(response);
-                // Handle Server messages in separate tasks
-                var receiveTask = ReceiveMessagesAsyncClient(client, token);
-                var sendTask = SendMessagesAsyncClient(client, token);
+            messagesFromServerQueue.Enqueue(response);
+            // Handle Server messages in separate tasks
+            var receiveTask = ReceiveMessagesAsyncClient(client, token);
+            var sendTask = SendMessagesAsyncClient(client, token);
 
-                await Task.WhenAll(receiveTask, sendTask); // Wait for any task to complete
-            }
-            else
-            {
-                int retryCount = 0;
-                int maxRetries = 5;
-                while (retryCount < maxRetries && !conect)
-                {
-                    try
-                    {
-                        await ConnectToServer(numberOfDrones, sizeOfBoidBoundingBox, token);
-
-                        // Listen for a response from the server
-                        buffer = new byte[1024];
-                        bytesRead = await stream.ReadAsync(buffer, 0, buffer.Length);
-                        response = Encoding.ASCII.GetString(buffer, 0, bytesRead);
-                        if (response.StartsWith("{\"Positions\":{\"SimulationDrone1\":"))
-                        {
-                            conect = true;
-                        }
-
-                    }
-                    catch (Exception ex)
-                    {
-                        Debug.LogError(ex.Message);
-                        retryCount++;
-                        await Task.Delay(1000); // Wait before retrying
-                    }
-                }
-            }
+            await Task.WhenAll(receiveTask, sendTask); // Wait for any task to complete
+            
+            
 
             Debug.Log("Received: " + response);
             
@@ -125,12 +98,7 @@ public class DroneSimulationClient : MonoBehaviour
         {
             Debug.LogError("SocketException: " + ex.Message);
         }
-        //maybe cause bug
-        /*finally
-        {
-            stream?.Close();
-            client?.Close();
-        }*/
+        
         
     }
     async Task SendMessagesAsyncClient(TcpClient client, CancellationToken token)
@@ -160,7 +128,7 @@ public class DroneSimulationClient : MonoBehaviour
     async Task ReceiveMessagesAsyncClient(TcpClient client, CancellationToken token)
     {
         var stream = client.GetStream();
-        byte[] buffer = new byte[1024];
+        byte[] buffer = new byte[2048*16];
         try
         {
             
@@ -190,83 +158,132 @@ public class DroneSimulationClient : MonoBehaviour
 
     string messageFromServer;
     //bool firstmessagesent = false; For ping test
-    DateTime startTime;
-    DateTime endTime;
+    //DateTime startTime;
+    //DateTime endTime;
     //with 10000 operations i get 14,3 ms of ping time in local network
     //witch is pretty good
     private void Update()
     {
-        if (!droneClientCreated) 
-        { 
+        // Check if drone information is initialized
+        if (!droneClientCreated)
+        {
             if (messagesFromServerQueue.TryDequeue(out messageFromServer))
             {
-                Debug.Log("Dequeued message : " + messageFromServer);
-                DronePositionResponse droneFirstPosition = Newtonsoft.Json.JsonConvert.DeserializeObject<DronePositionResponse>(messageFromServer);
-                for (int i = 0; i < droneFirstPosition.Positions.Count; i++)
-                {
-                    droneInformationClient.Add(new DroneInformation
-                    {
+                Debug.Log("Dequeued message: " + messageFromServer);
 
-                        droneIP = "SimulationDrone" + (i + 1).ToString(),
-                        takeoff = true,
-                        dronePosition = new DronePosition
+                // Deserialize the message into DronePositionResponse
+                DronePositionResponse droneFirstPosition = Newtonsoft.Json.JsonConvert.DeserializeObject<DronePositionResponse>(messageFromServer);
+
+                // Check the type of the message
+                if (droneFirstPosition.type == "Positions")
+                {
+                    Debug.Log("Processing Positions message for drone initialization...");
+
+                    for (int i = 0; i < droneFirstPosition.Positions.Count; i++)
+                    {
+                        string droneKey = "SimulationDrone" + (i + 1).ToString(); // Adjust based on your simulation keys
+                        if (droneFirstPosition.Positions.ContainsKey(droneKey))
                         {
-                            positionInfo = true,
-                            positionDroneX = droneFirstPosition.Positions["SimulationDrone" + (i + 1).ToString()][0],
-                            positionDroneY = droneFirstPosition.Positions["SimulationDrone" + (i + 1).ToString()][1],
-                            positionDroneZ = droneFirstPosition.Positions["SimulationDrone" + (i + 1).ToString()][2],
-                            rotationDroneYaw = droneFirstPosition.Positions["SimulationDrone" + (i + 1).ToString()][3]
-                        },
-                        droneVelocity = new DroneVelocity
-                        {
-                            vitesseDroneX = 0,
-                            vitesseDroneY = 0,
-                            vitesseDroneZ = 0,
-                            vitesseDroneYaw = 0
+                            droneInformationClient.Add(new DroneInformation
+                            {
+                                droneIP = droneKey,
+                                takeoff = true,
+                                dronePosition = new DronePosition
+                                {
+                                    positionInfo = true,
+                                    positionDroneX = droneFirstPosition.Positions[droneKey][0],
+                                    positionDroneY = droneFirstPosition.Positions[droneKey][1],
+                                    positionDroneZ = droneFirstPosition.Positions[droneKey][2],
+                                    rotationDroneYaw = droneFirstPosition.Positions[droneKey][3]
+                                },
+                                droneVelocity = new DroneVelocity
+                                {
+                                    vitesseDroneX = 0,
+                                    vitesseDroneY = 0,
+                                    vitesseDroneZ = 0,
+                                    vitesseDroneYaw = 0
+                                }
+                            });
                         }
-                    });
+                        else
+                        {
+                            Debug.LogWarning($"Key {droneKey} not found in Positions dictionary.");
+                        }
+                    }
+
+                    droneClientCreated = true;
                 }
-                droneClientCreated = true;
+                else
+                {
+                    Debug.LogWarning($"Unhandled message type: {droneFirstPosition.type}");
+                }
             }
-                
         }
         //add a ready to be sent check?
+        //send the speed of the drones to the server
+        //and receive the position of the drones from the server
         else if (droneClientCreated && DroneSwarmControle.droneInformation != null && DroneSwarmControle.droneInitialized)
         {
-            List<DroneSpeedData> droneSpeedDataList = new List<DroneSpeedData>();
+            // Prepare the speed data list
+            DroneSpeedDataList droneSpeedDataList = new DroneSpeedDataList();
 
             for (int i = 0; i < DroneSwarmControle.droneInformation.Count; i++)
             {
                 DroneSpeedData data = new DroneSpeedData
                 {
                     droneIP = DroneSwarmControle.droneInformation[i].droneIP,
-                    Vx = DroneSwarmControle.droneInformation[i].droneVelocity.vitesseDroneX,
-                    Vy = DroneSwarmControle.droneInformation[i].droneVelocity.vitesseDroneY,
-                    Vz = DroneSwarmControle.droneInformation[i].droneVelocity.vitesseDroneZ,
-                    yaw_rate = DroneSwarmControle.droneInformation[i].droneVelocity.vitesseDroneYaw
+                    Vx = (float)Math.Round(DroneSwarmControle.droneInformation[i].droneVelocity.vitesseDroneX, 3),
+                    Vy = (float)Math.Round(DroneSwarmControle.droneInformation[i].droneVelocity.vitesseDroneY, 3),
+                    Vz = (float)Math.Round(DroneSwarmControle.droneInformation[i].droneVelocity.vitesseDroneZ, 3),
+                    yaw_rate = (float)Math.Round(DroneSwarmControle.droneInformation[i].droneVelocity.vitesseDroneYaw, 3)
                 };
-                droneSpeedDataList.Add(data);
+
+                // Add to the speed data list
+                droneSpeedDataList.Velocity.Add(data);
             }
 
-            // Serialize the list directly to JSON using Newtonsoft.Json
-            string json = JsonConvert.SerializeObject(droneSpeedDataList, Formatting.Indented);
-            Debug.Log("Serialized Speed JSON: " + json);
+            // Create the DroneInstruction object for speed
+            DroneInstruction speedMessage = new DroneInstruction
+            {
+                type = "speed", // Specify that this is a speed message
+                droneSpeedDataList = droneSpeedDataList,
+                commandData = null // No command data for speed messages
+            };
+
+            // Serialize the DroneInstruction object to JSON
+            string json = JsonConvert.SerializeObject(speedMessage, Formatting.Indented);
+
+            // Debugging to see the serialized JSON
+            //Debug.Log("Serialized Speed JSON: " + json);
+
+            // Enqueue the JSON message to the server queue
             messagesToServerQueue.Enqueue(json);
             messageAvailable.Set(); // Signal that a message is ready to be sent
 
             if (messagesFromServerQueue.TryDequeue(out messageFromServer))
             {
                 Debug.Log("Dequeued message : " + messageFromServer);
-                DronePositionResponse dronePositionReponse = Newtonsoft.Json.JsonConvert.DeserializeObject<DronePositionResponse>(messageFromServer);
-                for (int i = 0; i < dronePositionReponse.Positions.Count; i++)
+
+                // Deserialize the message into DronePositionResponse
+                DronePositionResponse dronePositionResponse = Newtonsoft.Json.JsonConvert.DeserializeObject<DronePositionResponse>(messageFromServer);
+
+                // Check the type of the message
+                if (dronePositionResponse.type == "Positions")
                 {
-                    DroneSwarmControle.droneInformation[i].dronePosition.positionDroneX = dronePositionReponse.Positions[DroneSwarmControle.droneInformation[i].droneIP][0];
-                    DroneSwarmControle.droneInformation[i].dronePosition.positionDroneY = dronePositionReponse.Positions[DroneSwarmControle.droneInformation[i].droneIP][1];
-                    DroneSwarmControle.droneInformation[i].dronePosition.positionDroneZ = dronePositionReponse.Positions[DroneSwarmControle.droneInformation[i].droneIP][2];
-                    DroneSwarmControle.droneInformation[i].dronePosition.rotationDroneYaw = dronePositionReponse.Positions[DroneSwarmControle.droneInformation[i].droneIP][3];
-                    
+                    Debug.Log("Processing Positions message...");
+
+                    for (int i = 0; i < dronePositionResponse.Positions.Count; i++)
+                    {
+                        DroneSwarmControle.droneInformation[i].dronePosition.positionDroneX = dronePositionResponse.Positions[DroneSwarmControle.droneInformation[i].droneIP][0];
+                        DroneSwarmControle.droneInformation[i].dronePosition.positionDroneY = dronePositionResponse.Positions[DroneSwarmControle.droneInformation[i].droneIP][1];
+                        DroneSwarmControle.droneInformation[i].dronePosition.positionDroneZ = dronePositionResponse.Positions[DroneSwarmControle.droneInformation[i].droneIP][2];
+                        DroneSwarmControle.droneInformation[i].dronePosition.rotationDroneYaw = dronePositionResponse.Positions[DroneSwarmControle.droneInformation[i].droneIP][3];
+                    }
                 }
-                
+                else
+                {
+                    Debug.LogWarning($"Unhandled message type: {dronePositionResponse.type}");
+                }
             }
 
         }

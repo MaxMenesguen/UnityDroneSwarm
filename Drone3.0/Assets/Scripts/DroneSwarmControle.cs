@@ -9,17 +9,14 @@ public class DroneSwarmControle : MonoBehaviour
     //[SerializeField] private GameObject DronePrefab; // Référence au prefab du drone
     public BoidController boidPrefab;
     [SerializeField] private GameObject ClientAndServerPrefab;
+    [SerializeField] private GameObject IRLClient;
     [SerializeField] private GameObject BoidBoundingBox;
     [SerializeField] private GameObject SphereObstaclePrefab;
     [SerializeField] private GameObject AtractionObjectPrefab;
-
-    [SerializeField] private bool APIRequest = false;
-    [SerializeField] private bool APITakeOff = false;
-    [SerializeField] private bool droneAPITracking = false;
-    [SerializeField] private bool droneAPIVelocity = false;
-    [SerializeField] private bool startGoTO = false;
-    [SerializeField] private Vector3 GoToPosition = new Vector3(0, 0, 0);
     [SerializeField] private bool droneSimulation = false;
+    [SerializeField] private bool droneIRL = false;
+    [SerializeField] public bool takeOff = false;
+    [SerializeField] public bool land = false;
     [SerializeField] private float sizeOfBoidBoundingBox = 2f; // size of the bounding box for the boids
     [SerializeField] private int numberOfObstacle = 10; // Number of obstacles to create
     [SerializeField] private bool CreateAtractionObject = false; // Create an object that attracts the boids
@@ -30,12 +27,13 @@ public class DroneSwarmControle : MonoBehaviour
         //set { sizeOfBoidBoundingBox = value; } // Make it readonly if you don't want it to be changed from other scripts
     }
 
-    [SerializeField] private int numberOfDrones = 0; // Nombre de drones à créer
-    public int NumberOfDrones
+    [SerializeField] private int numberOfSimuDrones = 0; // Nombre de drones SIMU à créer
+    public int NumberOfSimuDrones
     {
-        get { return numberOfDrones; }
+        get { return numberOfSimuDrones; }
         //set { numberOfDrones = value; }
     }
+    
 
     private List<BoidController> _droneGameObject; // Liste pour stocker les GameObjects des drones
     private List<DroneBehavior> droneObjects = new List<DroneBehavior>(); // Liste pour stocker les scripts des drones
@@ -89,67 +87,87 @@ public class DroneSwarmControle : MonoBehaviour
             var obstacleInstance = Instantiate(SphereObstaclePrefab);
             float sizeObstacle = Mathf.Pow(Random.Range(0f, 1f), 3) * (sizeOfBoidBoundingBox) / 4;
             obstacleInstance.transform.localScale = new Vector3(sizeObstacle, sizeObstacle, sizeObstacle);
-            obstacleInstance.transform.localPosition += new Vector3(Random.Range(-sizeOfBoidBoundingBox / 2, sizeOfBoidBoundingBox / 2), Random.Range(-sizeOfBoidBoundingBox / 2, sizeOfBoidBoundingBox / 2), Random.Range(-sizeOfBoidBoundingBox / 2, sizeOfBoidBoundingBox / 2));
+            obstacleInstance.transform.localPosition += new Vector3(Random.Range(-sizeOfBoidBoundingBox / 2, sizeOfBoidBoundingBox / 2),
+                Random.Range(-sizeOfBoidBoundingBox / 2, sizeOfBoidBoundingBox / 2),
+                Random.Range(-sizeOfBoidBoundingBox / 2, sizeOfBoidBoundingBox / 2));
         }
     }
 
     private void Update()
     {
+        if (droneIRL)
+        {
+            droneSimulation = false;
+        }
+        else if (droneSimulation)
+        {
+            droneIRL = false;
+        }
+
+
         #region IRL Drone Controle
-        if (APIRequest)
+        if (droneIRL)
         {
-
-            TakOffAndLandManagement();
-
-            ControlAPI();
-
-            SetVelocity();
-
-            if (droneConected == true && droneInformation != null && droneInformation.Count > 0 && !droneInitialized && droneInformation[0].dronePosition.positionInfo)
+            if (serverUpAndRunning == false)
             {
-                InitialiserDrone();
+                serverUpAndRunning = true;
+
+                GameObject clientAndServer = Instantiate(IRLClient);
+
             }
-            if (droneAPITracking)
+            if (DroneIRLClient.droneClientCreated)
             {
-                if (droneObjects.Count > 0)
+                droneInformation = DroneIRLClient.droneInformationClient;
+            }
+            if (droneInformation != null && !droneInitialized)
+            {
+                InitialiserDrone(droneInformation);
+                Debug.Log("Drone initialized");
+
+            }
+            else if (droneInformation != null && droneInitialized)
+            {
+                foreach (BoidController boid in _droneGameObject)
                 {
-                    for (int i = 0; i < droneInformation.Count; i++)
-                    {
-                        droneObjects[i].GetComponent<DroneBehavior>().UpdateDroneInfo(droneInformation[i]);
-                        droneObjects[i].transform.position = new Vector3(droneInformation[i].dronePosition.positionDroneX, droneInformation[i].dronePosition.positionDroneZ, droneInformation[i].dronePosition.positionDroneY);
-                        droneObjects[i].transform.rotation = Quaternion.Euler(0, droneInformation[i].dronePosition.rotationDroneYaw, 0);
-
-                    }
+                    boid.transform.position = new Vector3(droneInformation[_droneGameObject.IndexOf(boid)].dronePosition.positionDroneX,
+                        droneInformation[_droneGameObject.IndexOf(boid)].dronePosition.positionDroneY,
+                        droneInformation[_droneGameObject.IndexOf(boid)].dronePosition.positionDroneZ);
+                    boid.transform.rotation = Quaternion.Euler(droneInformation[_droneGameObject.IndexOf(boid)].dronePosition.rotationDroneRoll,
+                        droneInformation[_droneGameObject.IndexOf(boid)].dronePosition.rotationDroneYaw,
+                        droneInformation[_droneGameObject.IndexOf(boid)].dronePosition.rotationDronePitch);
                 }
-            }
-            // what drone did you select ?
-            if (droneInformation != null && selectedDroneIndex >= 0 && selectedDroneIndex < droneInformation.Count)
-            {
-                selectedDrone = droneInformation[selectedDroneIndex];
-            }
-            else
-            {
-                selectedDrone = null; // Reset to null if conditions are not met
+                /*if (takeOff && droneInformation[0].takeoff == false)
+                {
+                    *//*DroneIRLClient.SendCommand("takeoff", null); // Send "takeoff" command for all drones
+                    StartCoroutine(WaitForCommandResponse("takeoff"));*//*
+                    takeOff = false;
+                }
+                else if (takeOff && droneInformation[0].takeoff == true)
+                {
+                    takeOff = false;
+                }
+
+                if (droneInformation[0].takeoff == true && land)
+                {
+                    *//*SendCommand("land", null); // Send "land" command for all drones
+                    StartCoroutine(WaitForCommandResponse("land"));*//*
+                    land = false;
+                }
+                else if (droneInformation[0].takeoff == false && land)
+                {
+                    land = false;
+                }*/
+
             }
 
-            if (startGoTO && selectedDrone != null && droneConected == true && droneInformation != null && droneInformation.Count > 0)
-            {
-                UpdateDroneVelocityTowardsGoTo(selectedDrone, GoToPosition, maxSpeed);
-            }
-            else
-            {
-                startGoTO = false;
-            }
+
         }
-        else if (droneConected == true && !isCoroutineCheckDroneConnectionRunning && !isCoroutineGetFromAPIRunning && !isCoroutineCloseLinksRunning)
-        {
-            StartCoroutine(APIHelper.CloseLinks());
-        }
+
         #endregion
         if (droneSimulation)
         {
 
-            if (numberOfDrones != 0)
+            if (numberOfSimuDrones != 0)
             {
                 if (serverUpAndRunning == false)
                 {
@@ -164,7 +182,7 @@ public class DroneSwarmControle : MonoBehaviour
                 }
                 if (droneInformation != null && !droneInitialized)
                 {
-                    InitialiserDrone();
+                    InitialiserDrone(droneInformation);
                     Debug.Log("Drone initialized");
 
                 }
@@ -186,15 +204,15 @@ public class DroneSwarmControle : MonoBehaviour
                         }
                     }
                     
-                    //send it to server ok
-
-                    //wait to receive the new position of the drone ??????TO DO
-
-                    //update the position of the drone
+                    
                     foreach (BoidController boid in _droneGameObject)
                     {
-                        boid.transform.position = new Vector3(droneInformation[_droneGameObject.IndexOf(boid)].dronePosition.positionDroneX, droneInformation[_droneGameObject.IndexOf(boid)].dronePosition.positionDroneY, droneInformation[_droneGameObject.IndexOf(boid)].dronePosition.positionDroneZ);
-                        boid.transform.rotation = Quaternion.Euler(droneInformation[_droneGameObject.IndexOf(boid)].dronePosition.rotationDroneRoll, droneInformation[_droneGameObject.IndexOf(boid)].dronePosition.rotationDroneYaw, droneInformation[_droneGameObject.IndexOf(boid)].dronePosition.rotationDronePitch);
+                        boid.transform.position = new Vector3(droneInformation[_droneGameObject.IndexOf(boid)].dronePosition.positionDroneX, 
+                            droneInformation[_droneGameObject.IndexOf(boid)].dronePosition.positionDroneY, 
+                            droneInformation[_droneGameObject.IndexOf(boid)].dronePosition.positionDroneZ);
+                        boid.transform.rotation = Quaternion.Euler(droneInformation[_droneGameObject.IndexOf(boid)].dronePosition.rotationDroneRoll, 
+                            droneInformation[_droneGameObject.IndexOf(boid)].dronePosition.rotationDroneYaw, 
+                            droneInformation[_droneGameObject.IndexOf(boid)].dronePosition.rotationDronePitch);
                     }
 
                     //do the reception of the server 
@@ -232,16 +250,16 @@ public class DroneSwarmControle : MonoBehaviour
         {
             StartCoroutine(APIHelper.CheckDroneConnection());
         }
-        else if (droneConected == true && !isCoroutineGetFromAPIRunning)
+        /*else if (droneConected == true && !isCoroutineGetFromAPIRunning)
         {
             StartCoroutine(APIHelper.GetFromAPI());
-        } 
+        } */
     }
 
-    void InitialiserDrone()
+    void InitialiserDrone(List<DroneInformation> droneInformation)
     {
         droneInitialized = true;
-        numberOfDrones = droneInformation.Count;
+         int numberOfDrones = droneInformation.Count;
         _droneGameObject = new List<BoidController>();
         for (int i = 0; i < numberOfDrones; i++)
         {
@@ -259,43 +277,9 @@ public class DroneSwarmControle : MonoBehaviour
     }
     
 
-    void TakOffAndLandManagement()
-    {
-        if (APITakeOff)
-        {
-            if (droneConected && droneInformation != null && droneInformation.Count > 0 && droneInformation[0].takeoff == false && !isCoroutineTakeOffRunning )
-            {
-                Debug.Log("takeoff");
-                StartCoroutine(APIHelper.TakeOff());
-            } 
-        }
+   
 
-        else if (!APITakeOff)
-        {
-            if (droneConected  && droneInformation != null && droneInformation.Count > 0 && droneInformation[0].takeoff  && !isCoroutineLandRunning)
-            {
-                StartCoroutine(APIHelper.Land());
-                APITakeOff = false;
-            }
-        }
-    }
-    public void SetVelocity()
-    {
-        if (droneAPIVelocity && droneConected && droneInformation != null && droneInformation.Count > 0 && droneInformation[0].takeoff && !isCoroutineSetVelocity)
-        {
-            StartCoroutine(APIHelper.SetVelocityToAPI());
-
-            if (selectedDrone != null)
-            {
-                if (selectedDrone.droneVelocity.vitesseDroneX == 0 && selectedDrone.droneVelocity.vitesseDroneY == 0 && selectedDrone.droneVelocity.vitesseDroneZ == 0)
-                {
-                    droneAPIVelocity = false;
-                }
-            }
-        }
-    }
-
-    void UpdateDroneVelocityTowardsGoTo(DroneInformation selectedDrone, Vector3 GoToPosition, float maxSpeed)
+    /*void UpdateDroneVelocityTowardsGoTo(DroneInformation selectedDrone, Vector3 GoToPosition, float maxSpeed)
     {
         if (selectedDrone == null)
             return;
@@ -340,7 +324,7 @@ public class DroneSwarmControle : MonoBehaviour
         selectedDrone.droneVelocity.vitesseDroneX = desiredVelocityLocal.x;
         selectedDrone.droneVelocity.vitesseDroneY = desiredVelocityLocal.y;
         selectedDrone.droneVelocity.vitesseDroneZ = desiredVelocityLocal.z;
-    }
+    }*/
 
     //draw the vector velocity of drone
 /*

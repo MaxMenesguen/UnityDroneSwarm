@@ -82,7 +82,7 @@ public class DroneSimulationServer : MonoBehaviour
     async Task ReceiveMessagesAsyncServer(TcpClient client, CancellationToken token)
     {
         var stream = client.GetStream();
-        byte[] buffer = new byte[2048*4]; //originally 1024
+        byte[] buffer = new byte[2048*16]; //originally 1024
 
         try
         {
@@ -129,7 +129,7 @@ public class DroneSimulationServer : MonoBehaviour
         {
             if (messagesFromClientQueue.TryDequeue(out messageFromClient))
             {
-                Debug.Log("message from client :" + messageFromClient + $" sent by {connectedClient}");
+                //Debug.Log("message from client :" + messageFromClient);
                 // Regular expression to match the digits after the specific phrase
                 string pattern = @"The number of drone you have to create is : (\d+)";
 
@@ -154,19 +154,53 @@ public class DroneSimulationServer : MonoBehaviour
         {
             if (messagesFromClientQueue.TryDequeue(out messageFromClient))
             {
-                Debug.Log("message from client :" + messageFromClient + $" sent by {connectedClient}");
-                List<DroneSpeedData> droneSpeedDataList = JsonConvert.DeserializeObject<List<DroneSpeedData>>(messageFromClient);
+                Debug.Log("Message from client: " + messageFromClient);
+
+                // Deserialize the DroneInstruction object
+                DroneInstruction droneInstruction = JsonConvert.DeserializeObject<DroneInstruction>(messageFromClient);
+
+                // Check the type of instruction
+                if (droneInstruction.type == "speed")
+                {
+                    // Extract the speed data
+                    DroneSpeedDataList droneSpeedDataList = droneInstruction.droneSpeedDataList;
+
+                    if (droneSpeedDataList != null)
+                    {
+                        Debug.Log("Received speed data from client.");
+
+                        // Update drone positions based on the speed data
+                        messagesToClientQueue.Enqueue(ToJson(UpdateDronePositions(droneServerInformation, droneSpeedDataList.Velocity, Time.deltaTime)));
+                        messageAvailable.Set();
+                        droneCreatedSent = true;
+                    }
+                }
+                else if (droneInstruction.type == "command")
+                {
+                    // Handle commands such as "takeoff", "land", etc. 
+                    //not yet implemented 
+                    /*if (droneInstruction.commandData != null)
+                    {
+                        string commandType = droneInstruction.commandData.commandType;
+                        Debug.Log($"Received command: {commandType}");
+
+                        // Process the command
+                        ProcessCommand(commandType, droneInstruction.commandData);
+                    }*/
+                }
+                else
+                {
+                    Debug.LogWarning("Unknown instruction type received: " + droneInstruction.type);
+                }
+
                 //Debug
                 /*foreach (var droneSpeedData in droneSpeedDataList)
                 {
                     Debug.Log($"Drone {droneSpeedData.droneIP} has speed: Vx={droneSpeedData.Vx}, Vy={droneSpeedData.Vy}, Vz={droneSpeedData.Vz}, yaw_rate={droneSpeedData.yaw_rate}");
                 }*/
-                messagesToClientQueue.Enqueue(ToJson(UpdateDronePositions(droneServerInformation, droneSpeedDataList,Time.deltaTime)));
-                messageAvailable.Set();
-                droneCreatedSent = true;
 
             }
-            
+
 
             //ping test
             /*if (messagesFromClientQueue.TryDequeue(out messageFromClient))
@@ -203,9 +237,9 @@ public class DroneSimulationServer : MonoBehaviour
                 dronePosition = new DronePosition
                 {
                     positionInfo = true,
-                    positionDroneX = 0,//(float)Math.Round(UnityEngine.Random.Range(droneSpaceOrigin[0], droneSpaceEnd[0]), 2),
-                    positionDroneY = 0,//(float)Math.Round(UnityEngine.Random.Range(droneSpaceOrigin[1], droneSpaceEnd[1]), 2),
-                    positionDroneZ = 0,//(float)Math.Round(UnityEngine.Random.Range(droneSpaceOrigin[2], droneSpaceEnd[2]), 2),
+                    positionDroneX = 0,
+                    positionDroneY = 0,
+                    positionDroneZ = 0,
                     rotationDroneYaw = (int)UnityEngine.Random.Range(0, 360)
                 },
                 droneVelocity = new DroneVelocity
@@ -224,16 +258,18 @@ public class DroneSimulationServer : MonoBehaviour
     {
         DronePositionResponse dronePositionResponse = new DronePositionResponse
         {
+            type = "Positions",
             Positions = new Dictionary<string, float[]>()
         };
 
         foreach (var droneInfo in droneServerInformation)
         {
             dronePositionResponse.Positions.Add(droneInfo.droneIP, new float[] {
-            droneInfo.dronePosition.positionDroneX,
-            droneInfo.dronePosition.positionDroneY,
-            droneInfo.dronePosition.positionDroneZ,
-            droneInfo.dronePosition.rotationDroneYaw});
+            
+            (float)Math.Round(droneInfo.dronePosition.positionDroneX, 3),
+            (float)Math.Round(droneInfo.dronePosition.positionDroneY, 3),
+            (float)Math.Round(droneInfo.dronePosition.positionDroneZ, 3),
+            (float)Math.Round(droneInfo.dronePosition.rotationDroneYaw, 3) });
         }
         return  Newtonsoft.Json.JsonConvert.SerializeObject(dronePositionResponse);
     }
