@@ -16,7 +16,7 @@ logging.basicConfig(level=logging.INFO)
 logger = logging.getLogger(__name__)
 
 
-class DroneSimulationServer:
+class DroneServer:
     def __init__(self, host='0.0.0.0', port=8080):
         self.server_address = (host, port)
         self.drone_server_information = []
@@ -72,28 +72,38 @@ class DroneSimulationServer:
     def handle_send(self, client_socket):
         try:
             while self.running:
-                if not message_to_send_queue.empty():
-                    message_dict = message_to_send_queue.get()
+                try:
+                    message_dict = message_to_send_queue.get(timeout=0.001)  # Non-blocking with timeout
                     message = json.dumps(message_dict)
                     client_socket.sendall(message.encode('ascii'))
-                    #print(f"Sent to client: {message}")
+                except queue.Empty:
+                    pass  # No messages to send, keep checking
         except socket.error as e:
             print(f"Socket error: {e}")
         finally:
             client_socket.close()
+    
+    def send_status(message_queue, status_info):
+        status_message = {
+            "type": "status",
+            "additionalInformation": status_info
+        }
+        message_queue.put(status_message)
 
 
 if __name__ == "__main__":
 
     URIS = {
-    #'radio://0/80/2M/E7E7E7E701',
-    'radio://0/28/2M/E7E7E7E703',
+    'radio://0/80/2M/E7E7E7E701',
+    #'radio://0/28/2M/E7E7E7E703',
     #*'radio://0/80/2M/E7E7E7E7E7'
     }
-    server = DroneSimulationServer(port=8080)
+    server = DroneServer(port=8080)
     swarm_controller = SwarmController(URIS, positions_from_cf_queue)
     try:
         target = swarm_controller.open_swarm()
+        #wait 2s for the drones to connect
+        #time.sleep(2)
         server.start_server()
         target = swarm_controller.start_logging()
 
@@ -102,7 +112,7 @@ if __name__ == "__main__":
         #print recived messages
         try:
             while True:
-                # Process received messages
+                #Process received messages
                 if not message_recived_queue.empty():
                     command_message = message_recived_queue.get()
                     try:
@@ -124,31 +134,36 @@ if __name__ == "__main__":
 
                             # Handle specific commands
                             if command == "takeoff":
-                                height = parameters.get("height", 1.0)  # Default height 1.0m
-                                duration = parameters.get("duration", 5.0)  # Default duration 5.0s
+                                height = parameters.get("height", 0.5)  # Default height 0.5m
+                                duration = parameters.get("duration", 3.0)  # Default duration 3.0s
                                 swarm_controller.takeoff(height, duration)
-                                message_to_send_queue.put({"status": "takeoff initiated"})
+                                DroneServer.send_status(message_to_send_queue, "takeoff initiated")
 
                             elif command == "land":
                                 height = parameters.get("height", 0.0)  # Default height 0.0m (ground)
-                                duration = parameters.get("duration", 5.0)  # Default duration 5.0s
+                                duration = parameters.get("duration", 3.0)  # Default duration 3.0s
                                 swarm_controller.land(height, duration)
-                                message_to_send_queue.put({"status": "landing initiated"})
+                                DroneServer.send_status(message_to_send_queue, "land initiated")
 
                             else:
                                 message_to_send_queue.put({"error": f"unknown command: {command}"})
 
                         elif message_type == "speed":
-                            # Extract and handle speed data
-                            drone_speed_data_list = command_data.get("droneSpeedDataList", [])
+                            drone_speed_data_list = command_data.get("droneSpeedDataList", {}).get("Velocity", [])
                             print("drone_speed_data_list:", drone_speed_data_list)
+                            for drone_speed in drone_speed_data_list:
+                                drone_ip = drone_speed.get("droneIP")
+                                vx = drone_speed.get("Vx", 0.0)
+                                vy = drone_speed.get("Vy", 0.0)
+                                vz = drone_speed.get("Vz", 0.0)
+                                yaw_rate = drone_speed.get("yaw_rate", 0.0)
 
-                            # Example: Process speeds for swarm
-                            for speed_data in drone_speed_data_list:
-                                print(f"Processing speed for drone {speed_data['droneIP']}: {speed_data}")
-                                # Add logic to process speed data
+                                # Send the velocity command to the drone
+                                logger.info(f"Sending velocity command to {drone_ip}: Vx={vx}, Vy={vy}, Vz={vz}, YawRate={yaw_rate}")
+                                swarm_controller.send_velocity_command(drone_ip, vx, vy, vz, yaw_rate)
+                                
 
-                            message_to_send_queue.put({"status": "speed data processed"})
+                            #message_to_send_queue.put({"status": "speed command executed"})
 
                         else:
                             message_to_send_queue.put({"error": f"unknown message type: {message_type}"})
@@ -162,6 +177,7 @@ if __name__ == "__main__":
                 if not positions_from_cf_queue.empty():
                     # Get the latest positions dictionary from the queue
                     position_dict = positions_from_cf_queue.get()
+                    #print("position_dict:", position_dict)
 
                     message_to_send_queue.put(position_dict)
 

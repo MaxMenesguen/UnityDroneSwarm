@@ -202,10 +202,11 @@ public class DroneIRLClient : MonoBehaviour
                                     takeoff = false,
                                     dronePosition = new DronePosition
                                     {
+                                        //ATTENTION : unity and the server have different axis server is x,y,z and unity is x,z,y
                                         positionInfo = true,
                                         positionDroneX = positionData[0],
-                                        positionDroneY = positionData[1],
-                                        positionDroneZ = positionData[2],
+                                        positionDroneY = positionData[2],
+                                        positionDroneZ = positionData[1],
                                         rotationDroneYaw = positionData[3]
                                     },
                                     droneVelocity = new DroneVelocity
@@ -238,9 +239,42 @@ public class DroneIRLClient : MonoBehaviour
         }
         else if (droneClientCreated && DroneSwarmControle.droneInformation != null && DroneSwarmControle.droneInitialized)
         {
-            
-            // Handle Takeoff Command
-            if (referenceToDroneSwarmControle.takeOff && DroneSwarmControle.droneInformation[0].takeoff == false)
+
+            DroneSpeedDataList droneSpeedDataList = new DroneSpeedDataList();
+
+            if (DroneSwarmControle.droneInformation[0].takeoff == true && referenceToDroneSwarmControle.Controller)
+            {
+
+
+                for (int i = 0; i < DroneSwarmControle.droneInformation.Count; i++)
+                {
+                    DroneSpeedData data = new DroneSpeedData
+                    {
+                        //ATTENTION : unity and the server have different axis server is x,y,z and unity is x,z,y
+                        droneIP = DroneSwarmControle.droneInformation[i].droneIP,
+                        Vx = (float)Math.Round(DroneSwarmControle.droneInformation[i].droneVelocity.vitesseDroneX, 3),
+                        Vy = (float)Math.Round(DroneSwarmControle.droneInformation[i].droneVelocity.vitesseDroneZ, 3),
+                        Vz = (float)Math.Round(DroneSwarmControle.droneInformation[i].droneVelocity.vitesseDroneY, 3),
+                        yaw_rate = (float)Math.Round(DroneSwarmControle.droneInformation[i].droneVelocity.vitesseDroneYaw, 3)
+                    };
+                    droneSpeedDataList.Velocity.Add(data);
+                }
+
+                DroneInstruction speedMessage = new DroneInstruction
+                {
+                    type = "speed",
+                    droneSpeedDataList = droneSpeedDataList,
+                    commandData = null
+                };
+
+                string json = JsonConvert.SerializeObject(speedMessage, Formatting.Indented);
+                messagesToServerIRLQueue.Enqueue(json);
+                Debug.Log("Sending speed message: " + json);
+                messageAvailable.Set();
+            }
+
+                // Handle Takeoff Command
+                if (referenceToDroneSwarmControle.takeOff && DroneSwarmControle.droneInformation[0].takeoff == false)
             {
                 SendCommand("takeoff", new Dictionary<string, object>
                 {
@@ -283,11 +317,25 @@ public class DroneIRLClient : MonoBehaviour
 
                             if (droneInfo != null)
                             {
+                                //ATTENTION : unity and the server have different axis server is x,y,z and unity is x,z,y
                                 droneInfo.dronePosition.positionDroneX = droneData.Value[0];
-                                droneInfo.dronePosition.positionDroneY = droneData.Value[1];
-                                droneInfo.dronePosition.positionDroneZ = droneData.Value[2];
+                                droneInfo.dronePosition.positionDroneY = droneData.Value[2];
+                                droneInfo.dronePosition.positionDroneZ = droneData.Value[1];
                                 droneInfo.dronePosition.rotationDroneYaw = droneData.Value[3];
                             }
+                        }
+                    }
+                    else if (dronePositionResponse.type == "status")
+                    {
+                        if (dronePositionResponse.additionalInformation == "takeoff initiated")
+                        {
+                            DroneSwarmControle.droneInformation[0].takeoff = true;
+                            Debug.Log("Drone has taken off.");
+                        }
+                        else if (dronePositionResponse.additionalInformation == "land initiated")
+                        {
+                            DroneSwarmControle.droneInformation[0].takeoff = false;
+                            Debug.Log("Drone has landed.");
                         }
                     }
                     else

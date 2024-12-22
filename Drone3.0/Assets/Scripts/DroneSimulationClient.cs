@@ -253,7 +253,7 @@ public class DroneSimulationClient : MonoBehaviour
             // Serialize the DroneInstruction object to JSON
             string json = JsonConvert.SerializeObject(speedMessage, Formatting.Indented);
 
-            // Debugging to see the serialized JSON
+            
             //Debug.Log("Serialized Speed JSON: " + json);
 
             // Enqueue the JSON message to the server queue
@@ -262,7 +262,7 @@ public class DroneSimulationClient : MonoBehaviour
 
             if (messagesFromServerQueue.TryDequeue(out messageFromServer))
             {
-                Debug.Log("Dequeued message : " + messageFromServer);
+                //Debug.Log("Dequeued message : " + messageFromServer);
 
                 // Deserialize the message into DronePositionResponse
                 DronePositionResponse dronePositionResponse = Newtonsoft.Json.JsonConvert.DeserializeObject<DronePositionResponse>(messageFromServer);
@@ -270,7 +270,7 @@ public class DroneSimulationClient : MonoBehaviour
                 // Check the type of the message
                 if (dronePositionResponse.type == "Positions")
                 {
-                    Debug.Log("Processing Positions message...");
+                    //Debug.Log("Processing Positions message...");
 
                     for (int i = 0; i < dronePositionResponse.Positions.Count; i++)
                     {

@@ -5,14 +5,14 @@ using UnityEngine;
 public class BoidRotationLock : MonoBehaviour
 {
     public float rotationSpeed = 100f; // Adjust as needed for smooth rotation
-
+    
     void Update()
     {
         // Get parent's rotation in Euler angles for easy manipulation
         Vector3 parentRotationEuler = transform.parent.rotation.eulerAngles;
 
         // Create a target rotation that matches the parent's yaw but keeps pitch and roll at 0
-        Quaternion targetRotation = Quaternion.Euler(20, parentRotationEuler.y, 0);
+        Quaternion targetRotation = Quaternion.Euler(20, parentRotationEuler.y + 90, 0);
 
         transform.rotation = targetRotation;
 

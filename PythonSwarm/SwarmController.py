@@ -43,11 +43,11 @@ class SwarmController:
     def log_positions(self, scf):
         """Setup logging for position variables."""
         uri = scf.cf.link_uri
-        log_config = LogConfig(name='stateEstimate', period_in_ms=16)
-        log_config.add_variable('stateEstimate.x', 'FP16')
-        log_config.add_variable('stateEstimate.y', 'FP16')
-        log_config.add_variable('stateEstimate.z', 'FP16')
-        log_config.add_variable('stateEstimate.yaw', 'FP16')
+        log_config = LogConfig(name='stateEstimate', period_in_ms=40)
+        log_config.add_variable('stateEstimate.x', 'float')
+        log_config.add_variable('stateEstimate.y', 'float')
+        log_config.add_variable('stateEstimate.z', 'float')
+        log_config.add_variable('stateEstimate.yaw', 'float')
 
         def position_callback(timestamp, data, logconf):
             # Update the drone's position in the positions dictionary as an array
@@ -57,6 +57,7 @@ class SwarmController:
                 data['stateEstimate.z'],
                 data['stateEstimate.yaw']
             ]
+            #logger.info(f"Drone {uri} Position: {self.positions[uri]}")
 
             if len(self.positions) == len(self.uris):
                 # Prepare the "Positions" dictionary structure with a type field
@@ -64,10 +65,15 @@ class SwarmController:
                     "type": "Positions",
                     "Positions": self.positions.copy()
                 }
+                # self.log_counter = getattr(self, "log_counter", 0)
+                # if self.log_counter % 10 == 0:  # Log every 10th update
+                #     logger.info(f"Positions: {positions_message}")
+                # self.log_counter += 1
                 self.positions_from_cf_queue.put(positions_message)  # Add to the queue
 
         scf.cf.log.add_config(log_config)
         log_config.data_received_cb.add_callback(position_callback)
+        
         log_config.start()
 
     def start_logging(self):
@@ -91,6 +97,16 @@ class SwarmController:
         
         self.swarm.parallel_safe(land_drone)
         logger.info(f"Land command issued: height={height}m, duration={duration}s")
+
+    def send_velocity_command(self, drone_ip, vx, vy, vz, yaw_rate):
+        """Send a velocity command to a specific Crazyflie drone."""
+        def set_velocity(scf):
+            if scf.cf.link_uri == drone_ip:
+                commander = scf.cf.commander
+                commander.send_velocity_world_setpoint(vx, vy, vz, yaw_rate)
+
+        self.swarm.parallel_safe(set_velocity)
+        logger.info(f"Sent velocity to {drone_ip}: Vx={vx}, Vy={vy}, Vz={vz}, YawRate={yaw_rate}")
 
     def run(self):
         """Run the swarm controller in a thread."""

@@ -15,6 +15,7 @@ public class DroneSwarmControle : MonoBehaviour
     [SerializeField] private GameObject AtractionObjectPrefab;
     [SerializeField] private bool droneSimulation = false;
     [SerializeField] private bool droneIRL = false;
+    [SerializeField] public bool Controller = false;
     [SerializeField] public bool takeOff = false;
     [SerializeField] public bool land = false;
     [SerializeField] private float sizeOfBoidBoundingBox = 2f; // size of the bounding box for the boids
@@ -136,27 +137,23 @@ public class DroneSwarmControle : MonoBehaviour
                         droneInformation[_droneGameObject.IndexOf(boid)].dronePosition.rotationDroneYaw,
                         droneInformation[_droneGameObject.IndexOf(boid)].dronePosition.rotationDronePitch);
                 }
-                /*if (takeOff && droneInformation[0].takeoff == false)
+
+                if (droneInformation[0].takeoff == true && Controller)
                 {
-                    *//*DroneIRLClient.SendCommand("takeoff", null); // Send "takeoff" command for all drones
-                    StartCoroutine(WaitForCommandResponse("takeoff"));*//*
-                    takeOff = false;
-                }
-                else if (takeOff && droneInformation[0].takeoff == true)
-                {
-                    takeOff = false;
+                    foreach (BoidController boid in _droneGameObject)
+                    {
+                        List<float> simulationInformations = boid.SimulateMovement2(_droneGameObject, sizeOfBoidBoundingBox, Time.deltaTime);
+                        if (simulationInformations != null)
+                        {
+                            droneInformation[_droneGameObject.IndexOf(boid)].droneVelocity.vitesseDroneX = simulationInformations[0];
+                            droneInformation[_droneGameObject.IndexOf(boid)].droneVelocity.vitesseDroneY = simulationInformations[1];
+                            droneInformation[_droneGameObject.IndexOf(boid)].droneVelocity.vitesseDroneZ = simulationInformations[2];
+                            droneInformation[_droneGameObject.IndexOf(boid)].droneVelocity.vitesseDroneYaw = simulationInformations[3];
+                            
+                        }
+                    }
                 }
 
-                if (droneInformation[0].takeoff == true && land)
-                {
-                    *//*SendCommand("land", null); // Send "land" command for all drones
-                    StartCoroutine(WaitForCommandResponse("land"));*//*
-                    land = false;
-                }
-                else if (droneInformation[0].takeoff == false && land)
-                {
-                    land = false;
-                }*/
 
             }
 
@@ -192,7 +189,7 @@ public class DroneSwarmControle : MonoBehaviour
                     //get the speed of the drone
                     foreach (BoidController boid in _droneGameObject)
                     {
-                        List<float> simulationInformations = boid.SimulateMovement(_droneGameObject, sizeOfBoidBoundingBox, Time.deltaTime);
+                        List<float> simulationInformations = boid.SimulateMovement2(_droneGameObject, sizeOfBoidBoundingBox, Time.deltaTime);
                         if (simulationInformations != null)
                         {
                             droneInformation[_droneGameObject.IndexOf(boid)].droneVelocity.vitesseDroneX = simulationInformations[0];
