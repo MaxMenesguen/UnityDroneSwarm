@@ -66,15 +66,18 @@ public class DroneSwarmControle : MonoBehaviour
         // Set the scale of the BoidBoundingBox
         BoidBoundingBox.transform.localScale = new Vector3(sizeOfBoidBoundingBox, sizeOfBoidBoundingBox, sizeOfBoidBoundingBox);
 
-        // Array of positions for bounding boxes
+        // Offset distance to position the outer cubes
+        float halfSize = sizeOfBoidBoundingBox / 2;
+
+        // Array of positions for bounding boxes on each face of the inner cube
         Vector3[] positions = new Vector3[]
         {
-        new Vector3(sizeOfBoidBoundingBox, 0, 0),
-        new Vector3(-sizeOfBoidBoundingBox, 0, 0),
-        new Vector3(0, sizeOfBoidBoundingBox, 0),
-        new Vector3(0, -sizeOfBoidBoundingBox, 0),
-        new Vector3(0, 0, sizeOfBoidBoundingBox),
-        new Vector3(0, 0, -sizeOfBoidBoundingBox)
+        new Vector3(sizeOfBoidBoundingBox, halfSize, 0),  // Right face
+        new Vector3(-sizeOfBoidBoundingBox, halfSize, 0), // Left face
+        new Vector3(0, halfSize+ sizeOfBoidBoundingBox, 0),  // Top face
+        new Vector3(0, -halfSize, 0), // Bottom face
+        new Vector3(0, halfSize, sizeOfBoidBoundingBox),  // Front face
+        new Vector3(0, halfSize, -sizeOfBoidBoundingBox)  // Back face
         };
 
         // Instantiate bounding boxes at each position
@@ -82,6 +85,7 @@ public class DroneSwarmControle : MonoBehaviour
         {
             Instantiate(BoidBoundingBox, position, Quaternion.identity);
         }
+
 
         for (int i = 0; i < numberOfObstacle; i++)
         {
@@ -142,16 +146,22 @@ public class DroneSwarmControle : MonoBehaviour
                 {
                     foreach (BoidController boid in _droneGameObject)
                     {
-                        List<float> simulationInformations = boid.SimulateMovement2(_droneGameObject, sizeOfBoidBoundingBox, Time.deltaTime);
+                        List<float> simulationInformations = boid.SimulateMovement(_droneGameObject, sizeOfBoidBoundingBox, Time.deltaTime);
                         if (simulationInformations != null)
                         {
                             droneInformation[_droneGameObject.IndexOf(boid)].droneVelocity.vitesseDroneX = simulationInformations[0];
                             droneInformation[_droneGameObject.IndexOf(boid)].droneVelocity.vitesseDroneY = simulationInformations[1];
                             droneInformation[_droneGameObject.IndexOf(boid)].droneVelocity.vitesseDroneZ = simulationInformations[2];
                             droneInformation[_droneGameObject.IndexOf(boid)].droneVelocity.vitesseDroneYaw = simulationInformations[3];
-                            
+                            droneInformation[_droneGameObject.IndexOf(boid)].dronePosition.rotationDroneRoll = simulationInformations[4];
+                            droneInformation[_droneGameObject.IndexOf(boid)].dronePosition.rotationDronePitch = simulationInformations[5];
+
                         }
                     }
+                }
+                else
+                {
+                    Controller = false;
                 }
 
 
@@ -189,7 +199,7 @@ public class DroneSwarmControle : MonoBehaviour
                     //get the speed of the drone
                     foreach (BoidController boid in _droneGameObject)
                     {
-                        List<float> simulationInformations = boid.SimulateMovement2(_droneGameObject, sizeOfBoidBoundingBox, Time.deltaTime);
+                        List<float> simulationInformations = boid.SimulateMovement(_droneGameObject, sizeOfBoidBoundingBox, Time.deltaTime);
                         if (simulationInformations != null)
                         {
                             droneInformation[_droneGameObject.IndexOf(boid)].droneVelocity.vitesseDroneX = simulationInformations[0];

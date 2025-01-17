@@ -202,6 +202,7 @@ public class BoidController : MonoBehaviour
         transform.position = previousPosition; // Revert position !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
 
         Debug.DrawLine(transform.position, transform.position + velocity * distanceToObstacleDetection, Color.green);
+        Debug.Log($"Velocity: {velocity}, Yaw Rate: {angularVelocity}");
 
         //Debug.Log("Index of boid: " + droneIP);
         returnVariables = new List<float> { velocity.x, velocity.y, velocity.z, angularVelocity, currentRotation.x, currentRotation.z };
@@ -237,7 +238,7 @@ public class BoidController : MonoBehaviour
     }
 
 
-    
+
 
     public Vector3 pointA = new Vector3(0, 1, 0); // Starting point
     public Vector3 pointB = new Vector3(1, 1, 0); // Target point
@@ -252,7 +253,7 @@ public class BoidController : MonoBehaviour
     {
         List<float> returnVariables;
         Vector3 velocity = Vector3.zero; // To store velocity
-        float angularVelocity = 0f; // To store angular velocity
+        //float angularVelocity = 0f; // To store angular velocity
 
         // Check if the drone is close enough to the current target
         if (Vector3.Distance(transform.position, currentTarget) < thresholdRadius)
@@ -288,7 +289,7 @@ public class BoidController : MonoBehaviour
         }
 
         // Update position towards the target
-        velocity = direction * speed ;
+        velocity = direction * speed;
         Debug.Log("Velocity: " + velocity);
         //transform.position += velocity;
 
@@ -306,5 +307,44 @@ public class BoidController : MonoBehaviour
         return returnVariables;
     }
 
+
+    // Inspector variables for direct control of velocity and yaw rate
+    [SerializeField] public float vx = 0.0f; // Velocity in the X direction
+    [SerializeField] public float vy = 0.0f; // Velocity in the Y direction
+    [SerializeField] public float vz = 0.0f; // Velocity in the Z direction
+    [SerializeField] public float yawRate = 0.0f; // Yaw rate in degrees per second
+
+    // Input parameters for the simulation function
+    public List<float> SimulateMovement3(List<BoidController> other, float sizeOfBoidBoundingBox, float time)
+    {
+        List<float> returnVariables;
+
+        // Calculate velocity based on inspector values
+        Vector3 velocity = new Vector3(vx, vy, vz);
+
+        // Update position based on velocity
+        Vector3 previousPosition = transform.position;
+        transform.position += velocity * time;
+
+        // Calculate yaw rotation based on yawRate
+        float yawDelta = yawRate * time; // Change in yaw angle
+        transform.Rotate(0, yawDelta, 0);
+
+        // Debugging: Display velocity and rotation in the console
+        Debug.Log($"Velocity: {velocity}, Yaw Rate: {yawRate}");
+
+        // Return calculated values
+        returnVariables = new List<float>
+        {
+            velocity.x,
+            velocity.y,
+            velocity.z,
+            yawRate,
+            transform.rotation.eulerAngles.x,
+            transform.rotation.eulerAngles.z
+        };
+
+        return returnVariables;
+    }
 
 }

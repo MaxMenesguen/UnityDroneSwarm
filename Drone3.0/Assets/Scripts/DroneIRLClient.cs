@@ -203,11 +203,13 @@ public class DroneIRLClient : MonoBehaviour
                                     dronePosition = new DronePosition
                                     {
                                         //ATTENTION : unity and the server have different axis server is x,y,z and unity is x,z,y
+                                        //ATTENTION : unity and the server have different Yaw you have to change the sign of the yaw
+                                        //ATTENTION : unity and the server have different Yaw you have to add 90° to the yaw from the server to unity
                                         positionInfo = true,
                                         positionDroneX = positionData[0],
                                         positionDroneY = positionData[2],
                                         positionDroneZ = positionData[1],
-                                        rotationDroneYaw = positionData[3]
+                                        rotationDroneYaw = -positionData[3] + 90
                                     },
                                     droneVelocity = new DroneVelocity
                                     {
@@ -251,11 +253,12 @@ public class DroneIRLClient : MonoBehaviour
                     DroneSpeedData data = new DroneSpeedData
                     {
                         //ATTENTION : unity and the server have different axis server is x,y,z and unity is x,z,y
+                        
                         droneIP = DroneSwarmControle.droneInformation[i].droneIP,
                         Vx = (float)Math.Round(DroneSwarmControle.droneInformation[i].droneVelocity.vitesseDroneX, 3),
                         Vy = (float)Math.Round(DroneSwarmControle.droneInformation[i].droneVelocity.vitesseDroneZ, 3),
                         Vz = (float)Math.Round(DroneSwarmControle.droneInformation[i].droneVelocity.vitesseDroneY, 3),
-                        yaw_rate = (float)Math.Round(DroneSwarmControle.droneInformation[i].droneVelocity.vitesseDroneYaw, 3)
+                        yaw_rate = (float)Math.Round(DroneSwarmControle.droneInformation[i].droneVelocity.vitesseDroneYaw, 3) 
                     };
                     droneSpeedDataList.Velocity.Add(data);
                 }
@@ -269,12 +272,12 @@ public class DroneIRLClient : MonoBehaviour
 
                 string json = JsonConvert.SerializeObject(speedMessage, Formatting.Indented);
                 messagesToServerIRLQueue.Enqueue(json);
-                Debug.Log("Sending speed message: " + json);
+                //Debug.Log("Sending speed message: " + json);
                 messageAvailable.Set();
             }
 
                 // Handle Takeoff Command
-                if (referenceToDroneSwarmControle.takeOff && DroneSwarmControle.droneInformation[0].takeoff == false)
+            if (referenceToDroneSwarmControle.takeOff && DroneSwarmControle.droneInformation[0].takeoff == false)
             {
                 SendCommand("takeoff", new Dictionary<string, object>
                 {
@@ -290,7 +293,7 @@ public class DroneIRLClient : MonoBehaviour
                 SendCommand("land", new Dictionary<string, object>
                 {
                     { "height", 0.0 }, // Land to ground level
-                    { "duration", 5.0 } // Example parameter: landing duration
+                    { "duration", 3.0 } // Example parameter: landing duration
                 });
                 referenceToDroneSwarmControle.land = false;
             }
@@ -318,10 +321,12 @@ public class DroneIRLClient : MonoBehaviour
                             if (droneInfo != null)
                             {
                                 //ATTENTION : unity and the server have different axis server is x,y,z and unity is x,z,y
+                                //ATTENTION : unity and the server have different Yaw you have to change the sign of the yaw
+                                //ATTENTION : unity and the server have different Yaw you have to add 90° to the yaw from the server to unity
                                 droneInfo.dronePosition.positionDroneX = droneData.Value[0];
                                 droneInfo.dronePosition.positionDroneY = droneData.Value[2];
                                 droneInfo.dronePosition.positionDroneZ = droneData.Value[1];
-                                droneInfo.dronePosition.rotationDroneYaw = droneData.Value[3];
+                                droneInfo.dronePosition.rotationDroneYaw = -droneData.Value[3] + 90;
                             }
                         }
                     }

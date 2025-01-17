@@ -224,6 +224,7 @@ public class DroneSimulationClient : MonoBehaviour
         //and receive the position of the drones from the server
         else if (droneClientCreated && DroneSwarmControle.droneInformation != null && DroneSwarmControle.droneInitialized)
         {
+            
             // Prepare the speed data list
             DroneSpeedDataList droneSpeedDataList = new DroneSpeedDataList();
 
@@ -274,7 +275,7 @@ public class DroneSimulationClient : MonoBehaviour
 
                     for (int i = 0; i < dronePositionResponse.Positions.Count; i++)
                     {
-                        DroneSwarmControle.droneInformation[i].dronePosition.positionDroneX = dronePositionResponse.Positions[DroneSwarmControle.droneInformation[i].droneIP][0];
+                        DroneSwarmControle.droneInformation[i].dronePosition.positionDroneX = dronePositionResponse.Positions[DroneSwarmControle.droneInformation[i].droneIP][0];   
                         DroneSwarmControle.droneInformation[i].dronePosition.positionDroneY = dronePositionResponse.Positions[DroneSwarmControle.droneInformation[i].droneIP][1];
                         DroneSwarmControle.droneInformation[i].dronePosition.positionDroneZ = dronePositionResponse.Positions[DroneSwarmControle.droneInformation[i].droneIP][2];
                         DroneSwarmControle.droneInformation[i].dronePosition.rotationDroneYaw = dronePositionResponse.Positions[DroneSwarmControle.droneInformation[i].droneIP][3];

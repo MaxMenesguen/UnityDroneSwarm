@@ -31,13 +31,22 @@ class DroneServer:
         self.sock.bind(self.server_address)
         self.sock.listen(1)
         print(f"Server started on port {self.server_address[1]}.")
-        # Accepting a client connection
-        client_socket, client_address = self.sock.accept()
-        print(f"Client connected from {client_address}")
 
-        # Create threads to handle sending and receiving
-        threading.Thread(target=self.handle_receive, args=(client_socket,), daemon=True).start()
-        threading.Thread(target=self.handle_send, args=(client_socket,), daemon=True).start()
+        # Run the accept loop in a separate thread
+        threading.Thread(target=self.accept_clients, daemon=True).start()
+
+    def accept_clients(self):
+        while self.running:
+            try:
+                self.client_socket, client_address = self.sock.accept()
+                print(f"Client connected from {client_address}")
+
+                # Create threads to handle sending and receiving
+                threading.Thread(target=self.handle_receive, args=(self.client_socket,), daemon=True).start()
+                threading.Thread(target=self.handle_send, args=(self.client_socket,), daemon=True).start()
+            except socket.timeout:
+                continue  # Retry accepting new connections
+
         
     def close(self):
         """Close the server and client sockets."""
@@ -96,7 +105,7 @@ if __name__ == "__main__":
     URIS = {
     'radio://0/80/2M/E7E7E7E701',
     #'radio://0/28/2M/E7E7E7E703',
-    #*'radio://0/80/2M/E7E7E7E7E7'
+    'radio://0/80/2M/E7E7E7E7E7'
     }
     server = DroneServer(port=8080)
     swarm_controller = SwarmController(URIS, positions_from_cf_queue)

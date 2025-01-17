@@ -489,17 +489,27 @@ PrefabInstance:
     - target: {fileID: 7655527870743185256, guid: bda21f4247bba0646b63989e21816a29,
         type: 3}
       propertyPath: droneIRL
-      value: 0
+      value: 1
       objectReference: {fileID: 0}
     - target: {fileID: 7655527870743185256, guid: bda21f4247bba0646b63989e21816a29,
         type: 3}
       propertyPath: droneSimulation
-      value: 1
+      value: 0
+      objectReference: {fileID: 0}
+    - target: {fileID: 7655527870743185256, guid: bda21f4247bba0646b63989e21816a29,
+        type: 3}
+      propertyPath: numberOfObstacle
+      value: 10
       objectReference: {fileID: 0}
     - target: {fileID: 7655527870743185256, guid: bda21f4247bba0646b63989e21816a29,
         type: 3}
       propertyPath: numberOfSimuDrones
       value: 1
+      objectReference: {fileID: 0}
+    - target: {fileID: 7655527870743185256, guid: bda21f4247bba0646b63989e21816a29,
+        type: 3}
+      propertyPath: sizeOfBoidBoundingBox
+      value: 1.5
       objectReference: {fileID: 0}
     m_RemovedComponents: []
     m_RemovedGameObjects: []
