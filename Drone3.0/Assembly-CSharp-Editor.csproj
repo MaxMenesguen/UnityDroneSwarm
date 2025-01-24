@@ -62,6 +62,7 @@
   <ItemGroup>
     <Compile Include="Assets\Editor\DroneSwarmControleEditor.cs" />
     <Compile Include="Assets\TutorialInfo\Scripts\Editor\ReadmeEditor.cs" />
+    <Compile Include="Assets\Editor\BoundaryBoxManagerEditor.cs" />
   </ItemGroup>
   <ItemGroup>
     <Reference Include="UnityEngine">

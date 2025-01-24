@@ -154,7 +154,7 @@ public class DroneSimulationServer : MonoBehaviour
         {
             if (messagesFromClientQueue.TryDequeue(out messageFromClient))
             {
-                Debug.Log("Message from client: " + messageFromClient);
+                //Debug.Log("Message from client: " + messageFromClient);
 
                 // Deserialize the DroneInstruction object
                 DroneInstruction droneInstruction = JsonConvert.DeserializeObject<DroneInstruction>(messageFromClient);
@@ -167,7 +167,7 @@ public class DroneSimulationServer : MonoBehaviour
 
                     if (droneSpeedDataList != null)
                     {
-                        Debug.Log("Received speed data from client.");
+                        //Debug.Log("Received speed data from client.");
 
                         // Update drone positions based on the speed data
                         messagesToClientQueue.Enqueue(ToJson(UpdateDronePositions(droneServerInformation, droneSpeedDataList.Velocity, Time.deltaTime)));

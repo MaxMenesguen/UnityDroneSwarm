@@ -25,7 +25,7 @@ public class BoidController : MonoBehaviour
         // Set the initial target to point A
         currentTarget = pointA;
     }
-    public List<float> SimulateMovement(List<BoidController> other, float sizeOfBoidBoundingBox, float time)
+    public List<float> SimulateMovement(List<BoidController> other, Vector3[] corners, float height, float time)
     {
         List<float> returnVariables;
         //default vars
@@ -36,6 +36,7 @@ public class BoidController : MonoBehaviour
         Vector3 cohesionDirection = Vector3.zero;
         avoidanceDirection = Vector3.zero;
         Vector3 outOfBound = Vector3.zero;
+        Vector3 correctionVector = Vector3.zero;
 
 
         int separationCount = 0;
@@ -88,34 +89,28 @@ public class BoidController : MonoBehaviour
         if (contactCount > 0)
             avoidanceDirection /= contactCount;
 
-        if (transform.position.x > (sizeOfBoidBoundingBox / 2 + (sizeOfBoidBoundingBox * getBackTOCenterTolerance / 2))
-            || transform.position.x < -(sizeOfBoidBoundingBox / 2 + (sizeOfBoidBoundingBox * getBackTOCenterTolerance / 2))
-            || transform.position.y > (sizeOfBoidBoundingBox / 2 + (sizeOfBoidBoundingBox * getBackTOCenterTolerance / 2))
-            || transform.position.y < -(sizeOfBoidBoundingBox / 2 + (sizeOfBoidBoundingBox * getBackTOCenterTolerance / 2))
-            || transform.position.z > (sizeOfBoidBoundingBox / 2 + (sizeOfBoidBoundingBox * getBackTOCenterTolerance / 2))
-            || transform.position.z < -(sizeOfBoidBoundingBox / 2 + (sizeOfBoidBoundingBox * getBackTOCenterTolerance / 2)))
-        {
-            outOfBound = -transform.position;
-            isOutOfBound = true;
-            Debug.Log("Out of bound");
-        }
-        if (isOutOfBound)
-        {
-            Debug.Log("Out of bound and true");
-            outOfBound = -transform.position;
-            if (transform.position.x < (sizeOfBoidBoundingBox / 2 - (sizeOfBoidBoundingBox * getBackTOCenterTolerance / 2))
-                && transform.position.x > -(sizeOfBoidBoundingBox / 2 - (sizeOfBoidBoundingBox * getBackTOCenterTolerance / 2))
-                && transform.position.y < (sizeOfBoidBoundingBox / 2 - (sizeOfBoidBoundingBox * getBackTOCenterTolerance / 2))
-                && transform.position.y > -(sizeOfBoidBoundingBox / 2 - (sizeOfBoidBoundingBox * getBackTOCenterTolerance / 2))
-                && transform.position.z < (sizeOfBoidBoundingBox / 2 - (sizeOfBoidBoundingBox * getBackTOCenterTolerance / 2))
-                && transform.position.z > -(sizeOfBoidBoundingBox / 2 - (sizeOfBoidBoundingBox * getBackTOCenterTolerance / 2)))
-            {
-                isOutOfBound = false;
-                outOfBound = Vector3.zero;
-                Debug.Log("in bound and false");
-            }
+        // Check if the drone is within the horizontal bounds of the polygon
+        bool isInsidePolygon = IsPointInsidePolygon(corners, transform.position);
 
+        // Check if the drone is within the vertical height bounds
+        bool isInsideHeight = transform.position.y >= 0 && transform.position.y <= height;
+
+        // Determine if the drone is out of bounds
+        if (!isInsidePolygon || !isInsideHeight)
+        {
+            isOutOfBound = true;
+
+            // Calculate the correction vector using the closest boundary point
+            correctionVector = CalculateCorrectionVector(corners, transform.position);
+            outOfBound = correctionVector;
+
+            Debug.Log("Drone out of bounds! Calculating correction vector...");
         }
+        else
+        {
+            isOutOfBound = false;
+        }
+
 
 
 
@@ -202,7 +197,7 @@ public class BoidController : MonoBehaviour
         transform.position = previousPosition; // Revert position !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
 
         Debug.DrawLine(transform.position, transform.position + velocity * distanceToObstacleDetection, Color.green);
-        Debug.Log($"Velocity: {velocity}, Yaw Rate: {angularVelocity}");
+        //Debug.Log($"Velocity: {velocity}, Yaw Rate: {angularVelocity}");
 
         //Debug.Log("Index of boid: " + droneIP);
         returnVariables = new List<float> { velocity.x, velocity.y, velocity.z, angularVelocity, currentRotation.x, currentRotation.z };
@@ -236,6 +231,91 @@ public class BoidController : MonoBehaviour
         // Normalize to ensure consistent movement speed in all directions
         return new Vector3(x, y, z).normalized;
     }
+
+    #region Find if the drone is out of bound and calculate the correction vector
+
+    private bool IsPointInsidePolygon(Vector3[] polygonCorners, Vector3 point)
+    {
+        int crossings = 0;
+        for (int i = 0; i < polygonCorners.Length; i++)
+        {
+            Vector3 start = polygonCorners[i];
+            Vector3 end = polygonCorners[(i + 1) % polygonCorners.Length];
+
+            // Check if the point is within the y-range of the edge
+            if ((start.z <= point.z && end.z > point.z) || (start.z > point.z && end.z <= point.z))
+            {
+                float t = (point.z - start.z) / (end.z - start.z);
+                float xIntersection = start.x + t * (end.x - start.x);
+
+                // Check if the intersection is to the right of the point
+                if (xIntersection > point.x)
+                {
+                    crossings++;
+                }
+            }
+        }
+
+        // If crossings are odd, the point is inside
+        return (crossings % 2 != 0);
+    }
+
+    private bool IsOutOfCustomArea(Vector3[] cornerPoints, float height, Vector3 dronePosition)
+    {
+        // Check if the point is inside the polygon (XZ plane)
+        bool insidePolygon = IsPointInsidePolygon(cornerPoints, dronePosition);
+
+        // Check if the drone is within the height range
+        bool withinHeight = dronePosition.y >= 0 && dronePosition.y <= height;
+
+        // Return true if the drone is outside either the polygon or the height range
+        return !insidePolygon || !withinHeight;
+    }
+
+    private Vector3 CalculateCorrectionVector(Vector3[] cornerPoints, Vector3 dronePosition)
+    {
+        Vector3 closestPoint = Vector3.zero;
+        float closestDistance = float.MaxValue;
+
+        // Iterate over all edges of the polygon
+        for (int i = 0; i < cornerPoints.Length; i++)
+        {
+            Vector3 start = cornerPoints[i];
+            Vector3 end = cornerPoints[(i + 1) % cornerPoints.Length];
+
+            // Find the closest point on this edge
+            Vector3 projectedPoint = ProjectPointOntoLineSegment(start, end, dronePosition);
+
+            // Calculate distance to the projected point
+            float distance = Vector3.Distance(dronePosition, projectedPoint);
+            if (distance < closestDistance)
+            {
+                closestDistance = distance;
+                closestPoint = projectedPoint;
+            }
+        }
+
+        // Return the direction vector from the drone to the closest point
+        return (closestPoint - dronePosition).normalized;
+    }
+
+    private Vector3 ProjectPointOntoLineSegment(Vector3 start, Vector3 end, Vector3 point)
+    {
+        Vector3 lineDirection = (end - start).normalized;
+        float lineLength = Vector3.Distance(start, end);
+
+        // Project the point onto the line
+        float t = Vector3.Dot((point - start), lineDirection) / lineLength;
+
+        // Clamp t to [0, 1] to restrict to the line segment
+        t = Mathf.Clamp01(t);
+
+        // Calculate the projection point
+        return start + t * (end - start);
+    }
+
+
+    #endregion
 
 
 
