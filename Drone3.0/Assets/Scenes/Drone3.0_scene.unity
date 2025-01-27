@@ -538,14 +538,14 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: dd8aa4ec8a730ec419317646b9517b0e, type: 3}
   m_Name: 
   m_EditorClassIdentifier: 
-  boundaryMode: 0
+  boundaryMode: 2
   sizeOfBoidBoundingBox: 2.5
-  customHeight: 5
+  customHeight: 2.5
   cornerPoints:
-  - {x: 0, y: 0, z: 0}
-  - {x: 0, y: 0, z: 0}
-  - {x: 0, y: 0, z: 0}
-  - {x: 0, y: 0, z: 0}
+  - {x: 1.82, y: 0, z: -0.6}
+  - {x: -2.51, y: 0, z: -0.7}
+  - {x: -2.55, y: 0, z: 0.63}
+  - {x: 1.6, y: 0, z: 2.55}
   saveFileName: CustomArea.json
 --- !u!1 &2056212205
 GameObject:
