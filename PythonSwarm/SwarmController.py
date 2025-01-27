@@ -77,7 +77,7 @@ class SwarmController:
                 data['stateEstimate.z'],
                 data['stateEstimate.yaw']
             ]
-            logger.info(f"Drone {uri} Position: {self.positions[uri]}")
+            #logger.info(f"Drone {uri} Position: {self.positions[uri]}")
 
             if len(self.positions) == len(self.valid_uris):
                 # Prepare the "Positions" dictionary structure with a type field
@@ -86,7 +86,7 @@ class SwarmController:
                     "Positions": self.positions.copy()
                 }
                 #     logger.info(f"Positions: {positions_message}")
-                #self.positions_from_cf_queue.put(positions_message)  # Add to the queue
+                self.positions_from_cf_queue.put(positions_message)  # Add to the queue
 
         scf.cf.log.add_config(log_config)
         log_config.data_received_cb.add_callback(position_callback)
