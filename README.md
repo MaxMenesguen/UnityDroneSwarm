@@ -1,65 +1,174 @@
-# Drone Swarm 
+# Drone Swarm
 
 ## Description
 
-This project offers a dual-component system designed for simulating and controlling a drone swarm with boid-like movement dynamics. The initiative is split into two main parts: a simulation environment and a real-world application interface.
+The Drone Swarm project is an application designed to control Crazyflie 2.x drones from Bitcraze using Unity with a Python backend. It provides a dual-component system for simulating and controlling drone swarms, featuring two distinct modes:
 
-### Simulation
+1. **Simulation Mode**: Safely test swarm behavior without risk. The simulation closely replicates real-world drone dynamics and behavior.
+2. **Real-World Control Mode**: Use Unity to send commands to Crazyflie drones, leveraging the behavior validated in simulation mode.
 
-The simulation component establishes a server to create virtual drones, managing these entities through UDP communication in JSON format. It inputs speed values for each drone, updates their positions, and communicates these updates back to the client. This process closely mirrors the communication methods used in real drone applications, allowing for a high-fidelity simulation of drone behavior.
+With a range of advanced features, this project makes it easy to control and test Crazyflie drones efficiently and effectively.
 
-### Real-World Application
+### Key Features
 
-Mirroring the simulation's interface, the real-world application connects to actual drones after their behavior has been validated within the simulation environment. This direct application lacks the virtual drone server, focusing on real-time interaction with physical drones.
+- **Simulation Environment**:
+
+  - High-fidelity drone behavior simulation with boid-like dynamics.
+  - Easy file programation to moddify and add drones bihavior.
+  - automatic obstacles, and boundaries crations with ajustables parameters .
+  - Real-time visual feedback in Unity.
+
+- **Real-World Application**:
+
+  - Integration with Crazyflie drones for live testing.
+  - automatic TCP server creation from python and connexion from unity.
+  - Command-based control system including **Take Off**, **Land**, and others...
+  - Automatic control of the drones from unity, sending velocity vectors to python bachend.
+  - Demonstration of multiples already implemented behavior in real drones.
+
+- **Custom Flight Area Tool**:
+
+  -  Quickly create and save custom flight areas by defining corner points and height.
+  - Saved configurations are stored in JSON for easy reuse.
+
+---
 
 ## Installation
 
-1. **Clone the Repository**
-   - Use `git clone` followed by the repository URL to clone the project to your local machine.
+### 1. Clone the Repository
 
-2. **Install Unity**
-   - Download and install Unity Hub from the [official Unity website](https://unity.com/).
-   - Within Unity Hub, install Unity version 2022.3.11f1.
+```bash
+git clone https://github.com/MaxMenesguen/UnityDroneSwarm
+```
 
-3. **Open the Project**
-   - Open Unity Hub and navigate to the 'Projects' tab.
-   - Click on 'Add' and select the cloned project directory.
-   - Ensure the project is set to open with Unity version 2022.3.11f1.
-   - If you encounter errors upon opening, it may be due to corrupted assets. Consider reinstalling any necessary assets to resolve these issues.
+### 2. Install Unity
 
-## Running the Simulation
+- Download and install Unity Hub from the [official Unity website](https://unity.com/).
+- Use Unity version `2022.3.11f1`.
 
-1. **Launch the Simulation**
-   - In the Unity Editor, locate the `SwarmGameObject` in the hierarchy.
-   - In the Inspector, enable the `Drone Simulation` checkbox.
+### 3. Install Python Environment
 
-2. **Configure Simulation Parameters**
-   - Adjust the following settings in the Inspector to customize the simulation:
-     - **Size of Boid Bounding Box**: Defines the simulation area.
-     - **Number of Boids**: Sets the number of drones in the simulation.
-     - **Number of Obstacles**: Generates the specified number of random-sized obstacles within the bounding box.
-     - **Create Attraction Object**: Introduces a red ball in the scene that attracts boids. This object can be moved during the simulation.
+- Set up a Python environment using `venv` or `conda`.
+- Install the required Python dependencies:
 
-3. **Boid Behavior Customization**
-   - Navigate to `Assets/Prefab/BoidPrefab` in the Project section.
-   - Select the BoidPrefab to view and adjust its behavior parameters in the Inspector, including:
-     - **No Clumping Radius**
-     - **Local Area Radius**
-     - **Speed**
-     - **Steering Speed**
-     - **Distance to Obstacle**
-     - **Get Back to Center**
+```bash
+pip install -r requirements.txt
+```
 
-4. **Start the Simulation**
-   - Press the Play button in Unity to begin the simulation and observe boid behavior.
+---
 
-## Real-World Application
+## Running the Application
 
-1. **Configuration**
-   - For real-drone operation, ensure only the `API Request` box is checked.
+### 1. Launching the Unity Simulation
 
-2. **Simulation Controls**
-   - **Drone API Tracking**: Activates real-time drone tracking.
-   - **Take Off**: Initiates drone takeoff.
-   - Use **Go To Coordinate** for individual drone commands or activate the boid simulation for the swarm.
+1. Open Unity Hub and add the project folder **Drone3.0**
 
+2. Set the Unity version to `2022.3.11f1`.
+
+3. In the Unity Editor:
+
+- Locate the Scene in **Assets/Scenes/Drone3.0\_scene.unity**
+- Locate the `SwarmGameObject` in the hierarchy, click on it.
+- Enable the **Drone Simulation** checkbox in the Inspector.
+
+4. Adjust simulation parameters in the Inspector:
+
+- **Boid Bounding Box Size**: In the Boundary Box Manager, you can choose from Simple Cube, Custom Area, and Area Creation modes to define and customize your flight area.
+- **Number of Boids**: Set the number of simulated drones.
+- **Number of Obstacles**: Add random obstacles within the area.
+- **Attraction Object**: Introduce an object to attract boids during the simulation.
+
+5. Customize boid behavior:
+
+   - Go to `Assets/Prefab/DroneBehaviorControler` and modify parameters such as:
+     - No Clumping Radius
+     - Local Area Radius
+     - Speed
+     - Steering Speed
+     - Obstacle Avoidance Distance
+     - Or others parameters of drones behaviors...
+
+6. Start the simulation by pressing the **Play** button.
+
+---
+
+### 2. Real-World Application with Crazyflie Drones
+
+1. **Python Server Setup**:
+
+   - Launch the Python backend to enable communication between Unity and the Crazyflie drones.
+     - Run in the directory **Python .\PythonSwarm\PythonServerTest.py**
+   - The server handles real-time position tracking and command relay from the crazyflies2.x to the crazyradio to Unity.
+
+2. **Unity Controls**:
+
+   - Enable the **Drone IRL** checkbox in the Inspector.
+   - Use the following controls in Unity:
+     - **Take Off**: Initiates drone takeoff.
+     - **Land**: Safely lands all drones.
+     - Select the behavior you want to give to the drone from the behavior dropdown menu.
+     - Check the Controller checkbox when you want to apply the behavior to the drone after take off.
+
+3. **Demo Ready**:
+
+   - Observe real drones executing boid-like behaviors or custom commands.
+
+---
+
+### 3. Custom Flight Area Creation
+
+1. Switch to **Area Creation Mode**:
+
+   - In Unity, set the boundary mode to **Area Creation** in the Inspector.
+
+2. Define Custom Area:
+
+   - Manually set the 4 corner points of the flight area and the desired height.
+   - Save the area configuration using the **Save Custom Area** button.
+
+3. JSON Integration:
+
+   - The custom area is saved in JSON format for easy reuse. Files are stored in `Assets/Scripts/SavedAreas`.
+
+4. Start Simulation:
+
+   - Switch to **Custom Area Mode** in Unity to load and use the saved area configuration.
+
+---
+
+## How It Works
+
+### Unity-Python Integration
+
+- **Unity as the Controller**: Sends takeoff, land, and velocity commands.
+- **Python Backend**: Receives commands, processes them, and communicates with Crazyflie drones.
+- **Real-Time Feedback**: Unity displays drone positions and updates based on Crazyflie’s state.
+
+### Boid Simulation on Crazyflie Drones
+
+- Drones mimic boid dynamics as demonstrated in the Unity simulation.
+- Commands like attraction to a target, obstacle avoidance, and alignment are directly translated to real drones.
+
+---
+
+## Example Screenshots
+
+### 1. Unity Simulation
+
+
+
+### 2. Custom Flight Area
+
+
+
+### 3. Real Drone Execution
+
+
+
+---
+
+## Future Enhancements
+
+- **Dynamic Command Input**: Allow real-time changes to drone behavior during operations.
+- **Advanced Visuals**: Add visual indicators for flight boundaries and drone paths in Unity.
+- **Computer vision** to detect obstacles in the flight area 
