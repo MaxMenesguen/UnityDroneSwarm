@@ -1,9 +1,9 @@
 from cflib.crazyflie.log import LogConfig
-from swarm import Swarm
-from cflib.crtp import init_drivers
+import cflib.crtp 
 import logging
 from cflib.crazyflie import Crazyflie
-from cflib.crazyflie.swarm import CachedCfFactory
+from cflib.crazyflie.syncCrazyflie import SyncCrazyflie
+from cflib.crazyflie.swarm import CachedCfFactory, Swarm
 import time
 
 
@@ -15,24 +15,44 @@ logger = logging.getLogger(__name__)
 
 class SwarmController:
     def __init__(self, uris, positions_from_cf_queue):
-        self.uris = uris
+        self.uris = list(uris)  # Convert to a mutable list
+        self.valid_uris = []
         self.positions_from_cf_queue = positions_from_cf_queue
         self.positions = {}
         self.swarm = None
+        self.factory = CachedCfFactory(rw_cache='./cache', ro_cache='./cache')
+
+    def check_uri_connection(self, uri):
+        """Check if a Crazyflie can connect to a URI."""
+        try:
+            with SyncCrazyflie(uri, cf=Crazyflie(rw_cache='./cache')) as scf:
+                if scf.is_link_open():
+                    logger.info(f"Successfully connected to {uri}")
+                    return True
+        except Exception as e:
+            logger.warning(f"Failed to connect to {uri}: {e}")
+        return False
 
     def open_swarm(self):
-        """Initialize and open links to the swarm with caching."""
-        init_drivers()
+        """Automatically handle connections to the swarm."""
+        cflib.crtp.init_drivers()
+
         
-        # Initialize the Crazyflie factory with caching
-        cf_factory = CachedCfFactory(rw_cache='./cache', ro_cache='./cache')
+        for uri in self.uris:
+            if self.check_uri_connection(uri):
+                self.valid_uris.append(uri)
 
-        # Create the Swarm instance using the factory
-        self.swarm = Swarm(self.uris, factory=cf_factory)
+        if not self.valid_uris:
+            logger.error("No Crazyflies are reachable. Exiting.")
+            return
 
-        # Open links to all drones in the swarm
-        self.swarm.open_links()
-        logger.info("Swarm connections opened with caching.")
+        try:
+            self.swarm = Swarm(self.valid_uris, factory=self.factory)
+            self.swarm.open_links()
+            logger.info("Swarm connections successfully opened.")
+        except Exception as e:
+            logger.error(f"Failed to open swarm connections: {e}")
+            self.swarm.close_links()
 
     def close_swarm(self):
         """Close links to the swarm."""
@@ -43,7 +63,7 @@ class SwarmController:
     def log_positions(self, scf):
         """Setup logging for position variables."""
         uri = scf.cf.link_uri
-        log_config = LogConfig(name='stateEstimate', period_in_ms=40)
+        log_config = LogConfig(name='stateEstimate', period_in_ms=30)
         log_config.add_variable('stateEstimate.x', 'float')
         log_config.add_variable('stateEstimate.y', 'float')
         log_config.add_variable('stateEstimate.z', 'float')
@@ -57,19 +77,16 @@ class SwarmController:
                 data['stateEstimate.z'],
                 data['stateEstimate.yaw']
             ]
-            #logger.info(f"Drone {uri} Position: {self.positions[uri]}")
+            logger.info(f"Drone {uri} Position: {self.positions[uri]}")
 
-            if len(self.positions) == len(self.uris):
+            if len(self.positions) == len(self.valid_uris):
                 # Prepare the "Positions" dictionary structure with a type field
                 positions_message = {
                     "type": "Positions",
                     "Positions": self.positions.copy()
                 }
-                # self.log_counter = getattr(self, "log_counter", 0)
-                # if self.log_counter % 10 == 0:  # Log every 10th update
                 #     logger.info(f"Positions: {positions_message}")
-                # self.log_counter += 1
-                self.positions_from_cf_queue.put(positions_message)  # Add to the queue
+                #self.positions_from_cf_queue.put(positions_message)  # Add to the queue
 
         scf.cf.log.add_config(log_config)
         log_config.data_received_cb.add_callback(position_callback)

@@ -106,17 +106,15 @@ class DroneServer:
 if __name__ == "__main__":
 
     URIS = {
-    #change this to an automatic way to get the URIs
+    #Put the URIs of the drones here
     'radio://0/80/2M/E7E7E7E701',
     #'radio://0/28/2M/E7E7E7E703',
     'radio://0/80/2M/E7E7E7E704'
     }
     server = DroneServer(port=8080)
-    swarm_controller = SwarmController(URIS, positions_from_cf_queue)
+    swarm_controller = SwarmController( URIS, positions_from_cf_queue)
     try:
         target = swarm_controller.open_swarm()
-        #wait 2s for the drones to connect
-        #time.sleep(2)
         server.start_server()
         target = swarm_controller.start_logging()
 

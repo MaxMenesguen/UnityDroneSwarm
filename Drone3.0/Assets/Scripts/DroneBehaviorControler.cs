@@ -2,7 +2,7 @@ using System.Collections;
 using System.Collections.Generic;
 using UnityEngine;
 
-public class BoidController : MonoBehaviour
+public class DroneBehaviorControler : MonoBehaviour
 {
     public string droneIP { get; set; }
     public float NoClumpingRadius = 0.30f;
@@ -25,7 +25,7 @@ public class BoidController : MonoBehaviour
         // Set the initial target to point A
         currentTarget = pointA;
     }
-    public List<float> SimulateMovement(List<BoidController> other, Vector3[] corners, float height, float time)
+    public List<float> SimulateMovement(List<DroneBehaviorControler> other, Vector3[] corners, float height, float time)
     {
         List<float> returnVariables;
         //default vars
@@ -44,7 +44,7 @@ public class BoidController : MonoBehaviour
         int cohesionCount = 0;
         int contactCount = 0;
 
-        foreach (BoidController boid in other)
+        foreach (DroneBehaviorControler boid in other)
         {
             //skip self
             if (boid == this)
@@ -329,7 +329,7 @@ public class BoidController : MonoBehaviour
     private bool movingToB = false; // State: Moving to Point B or Point A
 
 
-    public List<float> SimulateMovement2(List<BoidController> other, float sizeOfBoidBoundingBox, float time)
+    public List<float> SimulateMovement2(List<DroneBehaviorControler> other, float sizeOfBoidBoundingBox, float time)
     {
         List<float> returnVariables;
         Vector3 velocity = Vector3.zero; // To store velocity
@@ -395,7 +395,7 @@ public class BoidController : MonoBehaviour
     [SerializeField] public float yawRate = 0.0f; // Yaw rate in degrees per second
 
     // Input parameters for the simulation function
-    public List<float> SimulateMovement3(List<BoidController> other, float sizeOfBoidBoundingBox, float time)
+    public List<float> SimulateMovement3(List<DroneBehaviorControler> other, float sizeOfBoidBoundingBox, float time)
     {
         List<float> returnVariables;
 

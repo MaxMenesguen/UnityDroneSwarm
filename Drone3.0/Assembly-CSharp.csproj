@@ -60,8 +60,6 @@
     <Analyzer Include="C:\Program Files\Unity\Hub\Editor\2022.3.11f1\Editor\Data\Tools\Unity.SourceGenerators\Unity.Properties.SourceGenerator.dll" />
   </ItemGroup>
   <ItemGroup>
-    <Compile Include="Assets\Scripts\DroneControle.cs" />
-    <Compile Include="Assets\Scripts\TestDroneController.cs" />
     <Compile Include="Assets\LitJson\IJsonWrapper.cs" />
     <Compile Include="Assets\LitJson\JsonMockWrapper.cs" />
     <Compile Include="Assets\LitJson\Lexer.cs" />
@@ -73,10 +71,10 @@
     <Compile Include="Assets\LitJson\ParserToken.cs" />
     <Compile Include="Assets\LitJson\JsonMapper.cs" />
     <Compile Include="Assets\TutorialInfo\Scripts\Readme.cs" />
+    <Compile Include="Assets\Scripts\DroneBehaviorControler.cs" />
     <Compile Include="Assets\Scripts\BoundaryBoxManager.cs" />
     <Compile Include="Assets\Scripts\DroneSimulationServer.cs" />
     <Compile Include="Assets\Scripts\DroneSimulationClient.cs" />
-    <Compile Include="Assets\Scripts\BoidController.cs" />
     <Compile Include="Assets\LitJson\JsonData.cs" />
     <Compile Include="Assets\Scripts\DroneInformation.cs" />
     <Compile Include="Assets\Scripts\DroneBehavior.cs" />

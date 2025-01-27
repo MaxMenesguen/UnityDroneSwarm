@@ -9,7 +9,7 @@ using static UnityEngine.UI.GridLayoutGroup;
 public class DroneSwarmControle : MonoBehaviour
 {
     //[SerializeField] private GameObject DronePrefab; // Référence au prefab du drone
-    public BoidController boidPrefab;
+    public DroneBehaviorControler boidPrefab;
     [SerializeField] private GameObject ClientAndServerPrefab;
     [SerializeField] private GameObject IRLClient;
     [SerializeField] private GameObject BoidBoundingBox;
@@ -46,7 +46,7 @@ public class DroneSwarmControle : MonoBehaviour
     }
     
 
-    private List<BoidController> _droneGameObject; // Liste pour stocker les GameObjects des drones
+    private List<DroneBehaviorControler> _droneGameObject; // Liste pour stocker les GameObjects des drones
     //private List<DroneBehavior> droneObjects = new List<DroneBehavior>(); // Liste pour stocker les scripts des drones
 
     public static bool droneConected = false;
@@ -126,7 +126,7 @@ public class DroneSwarmControle : MonoBehaviour
             }
             else if (droneInformation != null && droneInitialized)
             {
-                foreach (BoidController boid in _droneGameObject)
+                foreach (DroneBehaviorControler boid in _droneGameObject)
                 {
                     boid.transform.position = new Vector3(droneInformation[_droneGameObject.IndexOf(boid)].dronePosition.positionDroneX,
                         droneInformation[_droneGameObject.IndexOf(boid)].dronePosition.positionDroneY,
@@ -138,7 +138,7 @@ public class DroneSwarmControle : MonoBehaviour
 
                 if (droneInformation[0].takeoff == true && Controller)
                 {
-                    foreach (BoidController boid in _droneGameObject)
+                    foreach (DroneBehaviorControler boid in _droneGameObject)
                     {
                         //could change to a scrolable list between all the simulations so that is could be changed in the inspector !!! 
                         List<float> simulationInformations = boid.SimulateMovement(_droneGameObject, corners, height, Time.deltaTime);
@@ -192,7 +192,7 @@ public class DroneSwarmControle : MonoBehaviour
                 {
                     //make boid simulation
                     //get the speed of the drone
-                    foreach (BoidController boid in _droneGameObject)
+                    foreach (DroneBehaviorControler boid in _droneGameObject)
                     {
                         List<float> simulationInformations = boid.SimulateMovement(_droneGameObject, corners, height, Time.deltaTime);
                         if (simulationInformations != null)
@@ -207,7 +207,7 @@ public class DroneSwarmControle : MonoBehaviour
                     }
                     
                     
-                    foreach (BoidController boid in _droneGameObject)
+                    foreach (DroneBehaviorControler boid in _droneGameObject)
                     {
                         boid.transform.position = new Vector3(droneInformation[_droneGameObject.IndexOf(boid)].dronePosition.positionDroneX, 
                             droneInformation[_droneGameObject.IndexOf(boid)].dronePosition.positionDroneY, 
@@ -249,7 +249,7 @@ public class DroneSwarmControle : MonoBehaviour
     {
         droneInitialized = true;
          int numberOfDrones = droneInformation.Count;
-        _droneGameObject = new List<BoidController>();
+        _droneGameObject = new List<DroneBehaviorControler>();
         for (int i = 0; i < numberOfDrones; i++)
         {
             Vector3 posDrone = new Vector3(droneInformation[i].dronePosition.positionDroneX, droneInformation[i].dronePosition.positionDroneZ, droneInformation[i].dronePosition.positionDroneY);
@@ -259,9 +259,9 @@ public class DroneSwarmControle : MonoBehaviour
 
             GameObject droneInstance = Instantiate(boidPrefab.gameObject, posDrone, rotationQuaternion);
 
-            _droneGameObject.Add(droneInstance.GetComponent<BoidController>());
+            _droneGameObject.Add(droneInstance.GetComponent<DroneBehaviorControler>());
             //droneInstance.GetComponent<DroneBehavior>().Initialiser(droneInformation[i]); what is this for ?
-            droneInstance.GetComponent<BoidController>().droneIP = droneInformation[i].droneIP;
+            droneInstance.GetComponent<DroneBehaviorControler>().droneIP = droneInformation[i].droneIP;
         }
     }
 

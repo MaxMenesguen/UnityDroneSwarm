@@ -1,7 +1,7 @@
 from cflib.crtp import init_drivers
 from cflib.crazyflie.syncCrazyflie import SyncCrazyflie
-from cflib.crazyflie.swarm import CachedCfFactory
-from swarm import Swarm
+from cflib.crazyflie.swarm import CachedCfFactory,Swarm
+
 from cflib.crazyflie.log import LogConfig
 import logging
 import os
