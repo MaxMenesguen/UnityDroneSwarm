@@ -108,8 +108,9 @@ if __name__ == "__main__":
     URIS = {
     #Put the URIs of the drones here
     'radio://0/80/2M/E7E7E7E701',
-    #'radio://0/28/2M/E7E7E7E703',
+    #'radio://0/28/2M/E7E7E7E703',//not working
     'radio://0/80/2M/E7E7E7E704'
+    'radio://0/80/2M/E7E7E7E705'
     }
     server = DroneServer(port=8080)
     swarm_controller = SwarmController( URIS, positions_from_cf_queue)

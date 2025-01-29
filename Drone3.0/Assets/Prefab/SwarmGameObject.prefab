@@ -9,7 +9,10 @@ GameObject:
   serializedVersion: 6
   m_Component:
   - component: {fileID: 7128864682163022471}
+  - component: {fileID: 1173773932486106245}
   - component: {fileID: 7655527870743185256}
+  - component: {fileID: 2760485341059966825}
+  - component: {fileID: -6520539296990352965}
   m_Layer: 0
   m_Name: SwarmGameObject
   m_TagString: Untagged
@@ -32,6 +35,27 @@ Transform:
   m_Children: []
   m_Father: {fileID: 0}
   m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
+--- !u!114 &1173773932486106245
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 2312109956877716730}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: dd8aa4ec8a730ec419317646b9517b0e, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: 
+  boundaryMode: 0
+  sizeOfBoidBoundingBox: 2.5
+  customHeight: 5
+  cornerPoints:
+  - {x: 0, y: 0, z: 0}
+  - {x: 0, y: 0, z: 0}
+  - {x: 0, y: 0, z: 0}
+  - {x: 0, y: 0, z: 0}
+  saveFileName: CustomArea.json
 --- !u!114 &7655527870743185256
 MonoBehaviour:
   m_ObjectHideFlags: 0
@@ -54,16 +78,50 @@ MonoBehaviour:
     type: 3}
   SphereObstaclePrefab: {fileID: 6164314110696678032, guid: 3ee945ffbd1b2234b86d3777f3fc4d02,
     type: 3}
-  AtractionObjectPrefab: {fileID: 3921596189924253741, guid: f86c6e03b7079974d9a63078e759952e,
-    type: 3}
   droneSimulation: 0
   droneIRL: 1
+  Controller: 0
   takeOff: 0
   land: 0
-  sizeOfBoidBoundingBox: 100
+  Leader: 1
+  leaderAttractionStrength: 0.5
   numberOfObstacle: 0
-  CreateAtractionObject: 0
-  numberOfSimuDrones: 4
-  referenceToDroneIRLClient: {fileID: 0}
+  numberOfSimuDrones: 5
   maxSpeed: 0.2
   closeEnoughDistance: 0.2
+--- !u!114 &2760485341059966825
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 2312109956877716730}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 650eea6290be7ca419e264d56b5b5cf7, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: 
+  createObstacles: 0
+  jsonFilePath: Assets/Scripts/Obstacles/obstacles.json
+  cubePrefab: {fileID: 3629744250974256927, guid: 23e8d43a27acee1489912b1c69f08651,
+    type: 3}
+  donutPrefab: {fileID: 7128850691766882168, guid: af4014d7b05b5624d8a063110f2a59c8,
+    type: 3}
+--- !u!114 &-6520539296990352965
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 2312109956877716730}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 54f1c1b491f56564aa14e245ba60f93c, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: 
+  attractionObjectPrefab: {fileID: 3921596189924253741, guid: f86c6e03b7079974d9a63078e759952e,
+    type: 3}
+  moveSpeed: 2
+  altitudeSpeed: 2
+  rotationSpeed: 100
+  toggleKey: 32

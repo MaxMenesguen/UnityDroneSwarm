@@ -5,6 +5,9 @@ using UnityEngine;
 public class DroneBehaviorControler : MonoBehaviour
 {
     public string droneIP { get; set; }
+    public bool Leader { get; set; }
+    public float leaderAttractionStrength { get; set;}
+
     public float NoClumpingRadius = 0.30f;
     public float LocalAreaRadius = 0.7f;
     public float Speed = 0.01f;
@@ -28,195 +31,215 @@ public class DroneBehaviorControler : MonoBehaviour
     public List<float> SimulateMovement(List<DroneBehaviorControler> other, Vector3[] corners, float height, float time)
     {
         List<float> returnVariables;
-        //default vars
-        var steering = Vector3.zero;
-        //separation vars
-        Vector3 separationDirection = Vector3.zero;
-        Vector3 alignmentDirection = Vector3.zero;
-        Vector3 cohesionDirection = Vector3.zero;
-        avoidanceDirection = Vector3.zero;
-        Vector3 outOfBound = Vector3.zero;
-        Vector3 correctionVector = Vector3.zero;
-
-
-        int separationCount = 0;
-        int alignmentCount = 0;
-        int cohesionCount = 0;
-        int contactCount = 0;
-
-        foreach (DroneBehaviorControler boid in other)
+        // If this drone is the leader, control it with the controller
+        if (Leader)
         {
-            //skip self
-            if (boid == this)
-                continue;
+            Vector3 joystickInput = new Vector3(-Input.GetAxis("RightStickVertical"),
+                                                Input.GetAxis("Vertical"),
+                                                Input.GetAxis("RightStickHorizontal"));
 
-            var distance = Vector3.Distance(boid.transform.position, this.transform.position);
+            Vector3 moveDirection = transform.TransformDirection(joystickInput.normalized) * Speed * time;
+            transform.position += moveDirection;
 
-            //identify local neighbour
-            if (distance < NoClumpingRadius)
+            float yawChange = Input.GetAxis("Horizontal") * SteeringSpeed * time;
+            transform.Rotate(0, yawChange, 0);
+
+            // Return the velocity and yaw
+            returnVariables = new List<float>
             {
-                separationDirection += boid.transform.position - transform.position;
-                separationCount++;
-            }
-            //identify local neighbour
-            if (distance < LocalAreaRadius)
+                moveDirection.x / time,
+                moveDirection.y / time,
+                moveDirection.z / time,
+                yawChange / time,
+                transform.rotation.eulerAngles.x,
+                transform.rotation.eulerAngles.z
+            };
+        }
+        else { 
+            //default vars
+            var steering = Vector3.zero;
+            //separation vars
+            Vector3 separationDirection = Vector3.zero;
+            Vector3 alignmentDirection = Vector3.zero;
+            Vector3 cohesionDirection = Vector3.zero;
+            avoidanceDirection = Vector3.zero;
+            Vector3 outOfBound = Vector3.zero;
+            Vector3 correctionVector = Vector3.zero;
+
+
+            int separationCount = 0;
+            int alignmentCount = 0;
+            int cohesionCount = 0;
+            int contactCount = 0;
+
+            foreach (DroneBehaviorControler boid in other)
             {
-                alignmentDirection += boid.transform.forward;
-                alignmentCount++;
+                //skip self
+                if (boid == this)
+                    continue;
+
+                var distance = Vector3.Distance(boid.transform.position, this.transform.position);
+
+                //identify local neighbour
+                if (distance < NoClumpingRadius)
+                {
+                    separationDirection += boid.transform.position - transform.position;
+                    separationCount++;
+                }
+                //identify local neighbour
+                if (distance < LocalAreaRadius)
+                {
+                    alignmentDirection += boid.transform.forward;
+                    alignmentCount++;
+                }
+                if (distance < LocalAreaRadius)
+                {
+                    cohesionDirection += boid.transform.position - transform.position;
+                    cohesionCount++;
+                }
             }
-            if (distance < LocalAreaRadius)
+            Vector3[] directions = { transform.forward, transform.up, transform.right, -transform.right, -transform.up,
+                (transform.forward + transform.up).normalized, (transform.forward - transform.up).normalized,
+                (transform.forward + transform.right).normalized, (transform.forward - transform.right).normalized};
+
+            RaycastHit hitInfo;
+
+            foreach (Vector3 dir in directions)
             {
-                cohesionDirection += boid.transform.position - transform.position;
-                cohesionCount++;
+                if (Physics.Raycast(transform.position, dir, out hitInfo, distanceToObstacleDetection, LayerMask.GetMask("ObstacleLayer")) && !isOutOfBound)
+                {
+                    Vector3 hitNormal = hitInfo.normal;
+                    //Debug.DrawLine(hitInfo.point, hitInfo.point + hitNormal * 2, Color.green, 2f);
+                    avoidanceDirection += hitNormal;
+                    contactCount++;
+                }
             }
-        }
-        Vector3[] directions = { transform.forward, transform.up, transform.right, -transform.right, -transform.up,
-            (transform.forward + transform.up).normalized, (transform.forward - transform.up).normalized,
-            (transform.forward + transform.right).normalized, (transform.forward - transform.right).normalized};
+            if (contactCount > 0)
+                avoidanceDirection /= contactCount;
 
-        RaycastHit hitInfo;
+            // Check if the drone is within the horizontal bounds of the polygon
+            bool isInsidePolygon = IsPointInsidePolygon(corners, transform.position);
 
-        foreach (Vector3 dir in directions)
-        {
-            if (Physics.Raycast(transform.position, dir, out hitInfo, distanceToObstacleDetection, LayerMask.GetMask("ObstacleLayer")) && !isOutOfBound)
+            // Check if the drone is within the vertical height bounds
+            bool isInsideHeight = transform.position.y >= 0 && transform.position.y <= height;
+
+            // Determine if the drone is out of bounds
+            if (!isInsidePolygon || !isInsideHeight)
             {
-                Vector3 hitNormal = hitInfo.normal;
-                //Debug.DrawLine(hitInfo.point, hitInfo.point + hitNormal * 2, Color.green, 2f);
-                avoidanceDirection += hitNormal;
-                contactCount++;
+                isOutOfBound = true;
+
+                // Calculate the correction vector using the closest boundary point
+                correctionVector = CalculateCorrectionVector(corners, transform.position);
+                outOfBound = correctionVector;
+
+                Debug.Log("Drone out of bounds! Calculating correction vector...");
             }
+            else
+            {
+                isOutOfBound = false;
+            }
+
+
+
+
+            //calculate average
+            if (separationCount > 0)
+                separationDirection /= separationCount;
+            if (alignmentCount > 0)
+                alignmentDirection /= alignmentCount;
+            if (cohesionCount > 0)
+                cohesionDirection /= cohesionCount;
+
+            //flip and normalize
+            /*separationDirection = -separationDirection.normalized;
+            alignmentDirection = alignmentDirection.normalized;
+            cohesionDirection = cohesionDirection.normalized;*/
+            //apply to steering
+
+
+            steering += avoidanceDirection;
+            steering += -separationDirection.normalized * 0.5f;
+            steering += alignmentDirection.normalized * 0.34f;
+            steering += cohesionDirection.normalized * 0.16f;
+            steering += outOfBound.normalized;
+            // Calculate Perlin noise based movement
+            Vector3 perlinDirection = CalculatePerlinDirection();
+            //ajust rotation speed
+            Vector3 currentDirection = transform.forward; // The current forward direction of the drone
+                                                          // Calculate or set your target direction here
+
+            float angleDifference = Vector3.Angle(currentDirection, steering);
+
+            // Optionally, scale the rotationSpeed based on the angleDifference
+            // For example, smaller angles could result in a smaller rotationSpeed
+            float rotationSpeedModifier = (angleDifference >= 15) ? 1 : Mathf.InverseLerp(15, 0, angleDifference);
+            // Base speed, adjust as needed
+            float adjustedRotationSpeed = SteeringSpeed * rotationSpeedModifier;
+
+            //atraction to AtractionObject
+            GameObject myObject = GameObject.FindWithTag("AtractionGameObject");
+            if (myObject != null)
+            {
+                // Access the object's location
+                Vector3 location = myObject.transform.position;
+                // Calculate the direction to the object
+                Vector3 directionToObject = location - transform.position;
+                // Normalize the direction
+                directionToObject.Normalize();
+                // Add the direction to the steering
+                steering += directionToObject * 0.4f;
+            }
+            // Attraction to the leader drone
+            GameObject leaderDrone = GameObject.FindWithTag("LeaderDrone");
+            if (leaderDrone != null)
+            {
+                Vector3 leaderDirection = (leaderDrone.transform.position - transform.position).normalized;
+                steering += leaderDirection * leaderAttractionStrength;
+            }
+
+            var previousRotation = transform.rotation;
+
+            //apply steering
+            if (!isOutOfBound)
+            {
+                transform.rotation = Quaternion.RotateTowards(transform.rotation, Quaternion.LookRotation(perlinDirection.normalized), (40 / (1 + 2 * cohesionCount)) * time);
+            }
+
+            if (steering != Vector3.zero)
+            {
+                transform.rotation = Quaternion.RotateTowards(transform.rotation, Quaternion.LookRotation(steering), adjustedRotationSpeed * time);
+
+            }
+            Vector3 currentRotation = transform.rotation.eulerAngles;
+            Quaternion deltaRotation = transform.rotation * Quaternion.Inverse(previousRotation);
+            deltaRotation.ToAngleAxis(out float angle, out Vector3 axis);
+            if (axis.y < 0) angle = -angle; // If axis points down, reverse the angle
+            angle = angle > 180 ? angle - 360 : (angle < -180 ? angle + 360 : angle); // Normalize angle to -180 to 180
+            float angularVelocity = angle / Time.deltaTime; // In degrees per second
+
+
+            transform.rotation = previousRotation; // Revert rotation !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
+
+            //Debug.Log("Angular Velocity :"+angularVelocity);
+
+            Vector3 previousPosition = transform.position;
+            //move 
+            transform.position += transform.TransformDirection(new Vector3(0, 0, Speed)) * time;
+
+            // Calculate velocity
+            Vector3 velocity = (transform.position - previousPosition) / Time.deltaTime;
+
+            transform.position = previousPosition; // Revert position !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
+
+            Debug.DrawLine(transform.position, transform.position + velocity * distanceToObstacleDetection, Color.green);
+            //Debug.Log($"Velocity: {velocity}, Yaw Rate: {angularVelocity}");
+
+            //Debug.Log("Index of boid: " + droneIP);
+            returnVariables = new List<float> { velocity.x, velocity.y, velocity.z, angularVelocity, currentRotation.x, currentRotation.z };
+            
         }
-        if (contactCount > 0)
-            avoidanceDirection /= contactCount;
 
-        // Check if the drone is within the horizontal bounds of the polygon
-        bool isInsidePolygon = IsPointInsidePolygon(corners, transform.position);
-
-        // Check if the drone is within the vertical height bounds
-        bool isInsideHeight = transform.position.y >= 0 && transform.position.y <= height;
-
-        // Determine if the drone is out of bounds
-        if (!isInsidePolygon || !isInsideHeight)
-        {
-            isOutOfBound = true;
-
-            // Calculate the correction vector using the closest boundary point
-            correctionVector = CalculateCorrectionVector(corners, transform.position);
-            outOfBound = correctionVector;
-
-            Debug.Log("Drone out of bounds! Calculating correction vector...");
-        }
-        else
-        {
-            isOutOfBound = false;
-        }
-
-
-
-
-        //calculate average
-        if (separationCount > 0)
-            separationDirection /= separationCount;
-        if (alignmentCount > 0)
-            alignmentDirection /= alignmentCount;
-        if (cohesionCount > 0)
-            cohesionDirection /= cohesionCount;
-
-        //flip and normalize
-        /*separationDirection = -separationDirection.normalized;
-        alignmentDirection = alignmentDirection.normalized;
-        cohesionDirection = cohesionDirection.normalized;*/
-        //apply to steering
-
-
-        steering += avoidanceDirection;
-        steering += -separationDirection.normalized * 0.5f;
-        steering += alignmentDirection.normalized * 0.34f;
-        steering += cohesionDirection.normalized * 0.16f;
-        steering += outOfBound.normalized;
-        // Calculate Perlin noise based movement
-        Vector3 perlinDirection = CalculatePerlinDirection();
-        //ajust rotation speed
-        Vector3 currentDirection = transform.forward; // The current forward direction of the drone
-                                                      // Calculate or set your target direction here
-
-        float angleDifference = Vector3.Angle(currentDirection, steering);
-
-        // Optionally, scale the rotationSpeed based on the angleDifference
-        // For example, smaller angles could result in a smaller rotationSpeed
-        float rotationSpeedModifier = (angleDifference >= 15) ? 1 : Mathf.InverseLerp(15, 0, angleDifference);
-        // Base speed, adjust as needed
-        float adjustedRotationSpeed = SteeringSpeed * rotationSpeedModifier;
-
-        //atraction to AtractionObject
-        GameObject myObject = GameObject.FindWithTag("AtractionGameObject");
-        if (myObject != null)
-        {
-            // Access the object's location
-            Vector3 location = myObject.transform.position;
-            // Calculate the direction to the object
-            Vector3 directionToObject = location - transform.position;
-            // Normalize the direction
-            directionToObject.Normalize();
-            // Add the direction to the steering
-            steering += directionToObject * 0.4f;
-        }
-
-        var previousRotation = transform.rotation;
-
-        //apply steering
-        if (!isOutOfBound)
-        {
-            transform.rotation = Quaternion.RotateTowards(transform.rotation, Quaternion.LookRotation(perlinDirection.normalized), (40 / (1 + 2 * cohesionCount)) * time);
-        }
-
-        if (steering != Vector3.zero)
-        {
-            transform.rotation = Quaternion.RotateTowards(transform.rotation, Quaternion.LookRotation(steering), adjustedRotationSpeed * time);
-
-        }
-        Vector3 currentRotation = transform.rotation.eulerAngles;
-        Quaternion deltaRotation = transform.rotation * Quaternion.Inverse(previousRotation);
-        deltaRotation.ToAngleAxis(out float angle, out Vector3 axis);
-        if (axis.y < 0) angle = -angle; // If axis points down, reverse the angle
-        angle = angle > 180 ? angle - 360 : (angle < -180 ? angle + 360 : angle); // Normalize angle to -180 to 180
-        float angularVelocity = angle / Time.deltaTime; // In degrees per second
-
-
-        transform.rotation = previousRotation; // Revert rotation !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
-
-        //Debug.Log("Angular Velocity :"+angularVelocity);
-
-        Vector3 previousPosition = transform.position;
-        //move 
-        transform.position += transform.TransformDirection(new Vector3(0, 0, Speed)) * time;
-
-        // Calculate velocity
-        Vector3 velocity = (transform.position - previousPosition) / Time.deltaTime;
-
-        transform.position = previousPosition; // Revert position !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
-
-        Debug.DrawLine(transform.position, transform.position + velocity * distanceToObstacleDetection, Color.green);
-        //Debug.Log($"Velocity: {velocity}, Yaw Rate: {angularVelocity}");
-
-        //Debug.Log("Index of boid: " + droneIP);
-        returnVariables = new List<float> { velocity.x, velocity.y, velocity.z, angularVelocity, currentRotation.x, currentRotation.z };
         return returnVariables;
-
-        //debug
-
-        //steering = steering.normalized;
-        /*Debug.DrawLine(transform.position, transform.position + transform.forward * distanceToObstacleDetection, Color.red);
-        Debug.DrawLine(transform.position, transform.position + transform.up * distanceToObstacleDetection, Color.blue);
-        Debug.DrawLine(transform.position, transform.position + transform.right * distanceToObstacleDetection, Color.blue);
-        Debug.DrawLine(transform.position, transform.position - transform.up * distanceToObstacleDetection, Color.blue);
-        Debug.DrawLine(transform.position, transform.position - transform.right * distanceToObstacleDetection, Color.blue);
-        Debug.DrawLine(transform.position, transform.position + (transform.forward + transform.up).normalized * distanceToObstacleDetection, Color.blue);
-        Debug.DrawLine(transform.position, transform.position + (transform.forward - transform.up).normalized * distanceToObstacleDetection, Color.blue);
-        Debug.DrawLine(transform.position, transform.position + (transform.forward + transform.right).normalized * distanceToObstacleDetection, Color.blue);
-        Debug.DrawLine(transform.position, transform.position + (transform.forward - transform.right).normalized * distanceToObstacleDetection, Color.blue);
-
-        Debug.DrawLine(transform.position, transform.position + steering * distanceToObstacleDetection, Color.green);*/
     }
 
 
@@ -296,7 +319,7 @@ public class DroneBehaviorControler : MonoBehaviour
         }
 
         // Return the direction vector from the drone to the closest point
-        return (closestPoint - dronePosition).normalized;
+        return (new Vector3 (closestPoint.x,dronePosition.y,closestPoint.z) - dronePosition).normalized;
     }
 
     private Vector3 ProjectPointOntoLineSegment(Vector3 start, Vector3 end, Vector3 point)

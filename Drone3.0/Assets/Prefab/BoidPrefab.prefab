@@ -47,9 +47,9 @@ MonoBehaviour:
   m_EditorClassIdentifier: 
   NoClumpingRadius: 0.6
   LocalAreaRadius: 0.8
-  Speed: 0.5
-  SteeringSpeed: 100
-  distanceToObstacleDetection: 0.6
+  Speed: 0.4
+  SteeringSpeed: 130
+  distanceToObstacleDetection: 0.4
   getBackTOCenterTolerance: -0.01
   pointA: {x: 0, y: 1, z: 0}
   pointB: {x: 1, y: 1, z: 0}

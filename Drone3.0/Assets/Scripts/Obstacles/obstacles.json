@@ -1,0 +1,41 @@
+{
+    "obstacles": [
+        {
+            "type": "cube",
+            "corner1": { "x": 1.11, "y": 0.21, "z": 0.0 },
+            "corner2": { "x": 0.90, "y": 0.40, "z": 0.0 },
+            "height": 3.0
+        },
+        {
+            "type": "cube",
+            "corner1": { "x": 1.0, "y": 1.13, "z": 0.0 },
+            "corner2": { "x": 1.55, "y": 1.415, "z": 0.0 },
+            "height": 1.40
+        },
+        {
+            "type": "cube",
+            "corner1": { "x": 0.27, "y": 1.09, "z": 0.0 },
+            "corner2": { "x": 0.055, "y": 1.28, "z": 0.0 },
+            "height": 1.73
+        },
+        {
+            "type": "cube",
+            "corner1": { "x": -1.243, "y": 0.59, "z": 0.0 },
+            "corner2": { "x": -1.46, "y": 0.765, "z": 0.0 },
+            "height": 2.28
+        },
+        {
+            "type": "cube",
+            "corner1": { "x": -0.84, "y": -0.09, "z": 1.90 },
+            "corner2": { "x": -1.00, "y": 0.19, "z": 1.90 },
+            "height": 1.0
+        },
+        {
+            "type": "donut",
+            "center": { "x": -0.93, "y": 0.02, "z": 1.745 },
+            "holeaxis": { "x": 0.0, "y": 0.0, "z": 1.0 },
+            "innerDiameter": 0.20,
+            "outerDiameter": 0.40
+        }
+    ]
+}

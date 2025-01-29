@@ -14,16 +14,17 @@ public class DroneSwarmControle : MonoBehaviour
     [SerializeField] private GameObject IRLClient;
     [SerializeField] private GameObject BoidBoundingBox;
     [SerializeField] private GameObject SphereObstaclePrefab;
-    [SerializeField] private GameObject AtractionObjectPrefab;
     [SerializeField] private bool droneSimulation = false;
     [SerializeField] private bool droneIRL = false;
     [SerializeField] public bool Controller = false;
+
+
     [SerializeField] public bool takeOff = false;
     [SerializeField] public bool land = false;
 
-
+    [SerializeField] public bool Leader = false; // Indicates if this drone is the leader
+    [SerializeField] public float leaderAttractionStrength = 0.5f; // Strength of attraction to the leader
     [SerializeField] private int numberOfObstacle = 10; // Number of obstacles to create
-    [SerializeField] private bool CreateAtractionObject = false; // Create an object that attracts the boids
 
     private BoundaryBoxManager boundaryBoxManager;
     private float sizeOfBoidBoundingBox; // size of the default bounding box for the boids
@@ -162,7 +163,6 @@ public class DroneSwarmControle : MonoBehaviour
 
             }
 
-
         }
 
         #endregion
@@ -216,22 +216,6 @@ public class DroneSwarmControle : MonoBehaviour
                             droneInformation[_droneGameObject.IndexOf(boid)].dronePosition.rotationDroneYaw, 
                             droneInformation[_droneGameObject.IndexOf(boid)].dronePosition.rotationDronePitch);
                     }
-
-                    //do the reception of the server 
-                    if (CreateAtractionObject && GameObject.FindWithTag("AtractionGameObject") ==null)
-                    {
-                        Instantiate(AtractionObjectPrefab);
-                    }
-                    else if (!CreateAtractionObject)
-                    {
-                        GameObject myObject = GameObject.FindWithTag("AtractionGameObject");
-                        if (myObject != null)
-                        {
-                            Destroy(myObject);
-                            
-                        }
-                        
-                    }
                 }
                 
             }
@@ -242,28 +226,40 @@ public class DroneSwarmControle : MonoBehaviour
             }
 
         }
-
     }
 
     void InitialiserDrone(List<DroneInformation> droneInformation)
     {
         droneInitialized = true;
-         int numberOfDrones = droneInformation.Count;
+        int numberOfDrones = droneInformation.Count;
         _droneGameObject = new List<DroneBehaviorControler>();
+
         for (int i = 0; i < numberOfDrones; i++)
         {
-            Vector3 posDrone = new Vector3(droneInformation[i].dronePosition.positionDroneX, droneInformation[i].dronePosition.positionDroneZ, droneInformation[i].dronePosition.positionDroneY);
-            Vector3 rotDrone = new Vector3(0, droneInformation[i].dronePosition.rotationDroneYaw, 0);
+            Vector3 posDrone = new Vector3(droneInformation[i].dronePosition.positionDroneX,
+                                           droneInformation[i].dronePosition.positionDroneZ,
+                                           droneInformation[i].dronePosition.positionDroneY);
 
-            Quaternion rotationQuaternion = Quaternion.Euler(rotDrone); // Convertit les angles Euler en Quaternion
+            Vector3 rotDrone = new Vector3(0, droneInformation[i].dronePosition.rotationDroneYaw, 0);
+            Quaternion rotationQuaternion = Quaternion.Euler(rotDrone);
 
             GameObject droneInstance = Instantiate(boidPrefab.gameObject, posDrone, rotationQuaternion);
 
-            _droneGameObject.Add(droneInstance.GetComponent<DroneBehaviorControler>());
-            //droneInstance.GetComponent<DroneBehavior>().Initialiser(droneInformation[i]); what is this for ?
-            droneInstance.GetComponent<DroneBehaviorControler>().droneIP = droneInformation[i].droneIP;
+            DroneBehaviorControler controller = droneInstance.GetComponent<DroneBehaviorControler>();
+            controller.droneIP = droneInformation[i].droneIP;
+            controller.leaderAttractionStrength = leaderAttractionStrength;
+
+            // Assign the leader flag to the first drone
+            if (i == 0)
+            {
+                controller.Leader = true;
+                droneInstance.tag = "LeaderDrone"; // Optional: Assign a tag for the leader
+            }
+
+            _droneGameObject.Add(controller);
         }
     }
+
 
     public void PerformActionBasedOnBoundaryMode()
     {

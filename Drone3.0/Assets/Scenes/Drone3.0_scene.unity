@@ -123,6 +123,149 @@ NavMeshSettings:
     debug:
       m_Flags: 0
   m_NavMeshData: {fileID: 0}
+--- !u!1001 &815186369
+PrefabInstance:
+  m_ObjectHideFlags: 0
+  serializedVersion: 2
+  m_Modification:
+    serializedVersion: 3
+    m_TransformParent: {fileID: 0}
+    m_Modifications:
+    - target: {fileID: 1173773932486106245, guid: bda21f4247bba0646b63989e21816a29,
+        type: 3}
+      propertyPath: boundaryMode
+      value: 1
+      objectReference: {fileID: 0}
+    - target: {fileID: 1173773932486106245, guid: bda21f4247bba0646b63989e21816a29,
+        type: 3}
+      propertyPath: customHeight
+      value: 2.5
+      objectReference: {fileID: 0}
+    - target: {fileID: 1173773932486106245, guid: bda21f4247bba0646b63989e21816a29,
+        type: 3}
+      propertyPath: cornerPoints.Array.data[0].x
+      value: 1.82
+      objectReference: {fileID: 0}
+    - target: {fileID: 1173773932486106245, guid: bda21f4247bba0646b63989e21816a29,
+        type: 3}
+      propertyPath: cornerPoints.Array.data[0].z
+      value: -0.6
+      objectReference: {fileID: 0}
+    - target: {fileID: 1173773932486106245, guid: bda21f4247bba0646b63989e21816a29,
+        type: 3}
+      propertyPath: cornerPoints.Array.data[1].x
+      value: -2.51
+      objectReference: {fileID: 0}
+    - target: {fileID: 1173773932486106245, guid: bda21f4247bba0646b63989e21816a29,
+        type: 3}
+      propertyPath: cornerPoints.Array.data[1].z
+      value: -0.7
+      objectReference: {fileID: 0}
+    - target: {fileID: 1173773932486106245, guid: bda21f4247bba0646b63989e21816a29,
+        type: 3}
+      propertyPath: cornerPoints.Array.data[2].x
+      value: -2.55
+      objectReference: {fileID: 0}
+    - target: {fileID: 1173773932486106245, guid: bda21f4247bba0646b63989e21816a29,
+        type: 3}
+      propertyPath: cornerPoints.Array.data[2].z
+      value: 0.63
+      objectReference: {fileID: 0}
+    - target: {fileID: 1173773932486106245, guid: bda21f4247bba0646b63989e21816a29,
+        type: 3}
+      propertyPath: cornerPoints.Array.data[3].x
+      value: 1.6
+      objectReference: {fileID: 0}
+    - target: {fileID: 1173773932486106245, guid: bda21f4247bba0646b63989e21816a29,
+        type: 3}
+      propertyPath: cornerPoints.Array.data[3].z
+      value: 2.55
+      objectReference: {fileID: 0}
+    - target: {fileID: 2312109956877716730, guid: bda21f4247bba0646b63989e21816a29,
+        type: 3}
+      propertyPath: m_Name
+      value: SwarmGameObject
+      objectReference: {fileID: 0}
+    - target: {fileID: 2760485341059966825, guid: bda21f4247bba0646b63989e21816a29,
+        type: 3}
+      propertyPath: jsonFilePath
+      value: Assets/Scripts/Obstacles/obstacles.json
+      objectReference: {fileID: 0}
+    - target: {fileID: 2760485341059966825, guid: bda21f4247bba0646b63989e21816a29,
+        type: 3}
+      propertyPath: createObstacles
+      value: 1
+      objectReference: {fileID: 0}
+    - target: {fileID: 7128864682163022471, guid: bda21f4247bba0646b63989e21816a29,
+        type: 3}
+      propertyPath: m_LocalPosition.x
+      value: 0
+      objectReference: {fileID: 0}
+    - target: {fileID: 7128864682163022471, guid: bda21f4247bba0646b63989e21816a29,
+        type: 3}
+      propertyPath: m_LocalPosition.y
+      value: 0
+      objectReference: {fileID: 0}
+    - target: {fileID: 7128864682163022471, guid: bda21f4247bba0646b63989e21816a29,
+        type: 3}
+      propertyPath: m_LocalPosition.z
+      value: 0
+      objectReference: {fileID: 0}
+    - target: {fileID: 7128864682163022471, guid: bda21f4247bba0646b63989e21816a29,
+        type: 3}
+      propertyPath: m_LocalRotation.w
+      value: 1
+      objectReference: {fileID: 0}
+    - target: {fileID: 7128864682163022471, guid: bda21f4247bba0646b63989e21816a29,
+        type: 3}
+      propertyPath: m_LocalRotation.x
+      value: 0
+      objectReference: {fileID: 0}
+    - target: {fileID: 7128864682163022471, guid: bda21f4247bba0646b63989e21816a29,
+        type: 3}
+      propertyPath: m_LocalRotation.y
+      value: 0
+      objectReference: {fileID: 0}
+    - target: {fileID: 7128864682163022471, guid: bda21f4247bba0646b63989e21816a29,
+        type: 3}
+      propertyPath: m_LocalRotation.z
+      value: 0
+      objectReference: {fileID: 0}
+    - target: {fileID: 7128864682163022471, guid: bda21f4247bba0646b63989e21816a29,
+        type: 3}
+      propertyPath: m_LocalEulerAnglesHint.x
+      value: 0
+      objectReference: {fileID: 0}
+    - target: {fileID: 7128864682163022471, guid: bda21f4247bba0646b63989e21816a29,
+        type: 3}
+      propertyPath: m_LocalEulerAnglesHint.y
+      value: 0
+      objectReference: {fileID: 0}
+    - target: {fileID: 7128864682163022471, guid: bda21f4247bba0646b63989e21816a29,
+        type: 3}
+      propertyPath: m_LocalEulerAnglesHint.z
+      value: 0
+      objectReference: {fileID: 0}
+    - target: {fileID: 7655527870743185256, guid: bda21f4247bba0646b63989e21816a29,
+        type: 3}
+      propertyPath: droneIRL
+      value: 0
+      objectReference: {fileID: 0}
+    - target: {fileID: 7655527870743185256, guid: bda21f4247bba0646b63989e21816a29,
+        type: 3}
+      propertyPath: droneSimulation
+      value: 1
+      objectReference: {fileID: 0}
+    - target: {fileID: 7655527870743185256, guid: bda21f4247bba0646b63989e21816a29,
+        type: 3}
+      propertyPath: numberOfSimuDrones
+      value: 5
+      objectReference: {fileID: 0}
+    m_RemovedComponents: []
+    m_RemovedGameObjects: []
+    m_AddedGameObjects: []
+    m_AddedComponents: []
+  m_SourcePrefab: {fileID: 100100000, guid: bda21f4247bba0646b63989e21816a29, type: 3}
 --- !u!1 &946188596
 GameObject:
   m_ObjectHideFlags: 0
@@ -423,130 +566,6 @@ Transform:
   m_Children: []
   m_Father: {fileID: 0}
   m_LocalEulerAnglesHint: {x: 50, y: -30, z: 0}
---- !u!1001 &1391730519
-PrefabInstance:
-  m_ObjectHideFlags: 0
-  serializedVersion: 2
-  m_Modification:
-    serializedVersion: 3
-    m_TransformParent: {fileID: 0}
-    m_Modifications:
-    - target: {fileID: 2312109956877716730, guid: bda21f4247bba0646b63989e21816a29,
-        type: 3}
-      propertyPath: m_Name
-      value: SwarmGameObject
-      objectReference: {fileID: 0}
-    - target: {fileID: 7128864682163022471, guid: bda21f4247bba0646b63989e21816a29,
-        type: 3}
-      propertyPath: m_LocalPosition.x
-      value: 0
-      objectReference: {fileID: 0}
-    - target: {fileID: 7128864682163022471, guid: bda21f4247bba0646b63989e21816a29,
-        type: 3}
-      propertyPath: m_LocalPosition.y
-      value: 0
-      objectReference: {fileID: 0}
-    - target: {fileID: 7128864682163022471, guid: bda21f4247bba0646b63989e21816a29,
-        type: 3}
-      propertyPath: m_LocalPosition.z
-      value: 0
-      objectReference: {fileID: 0}
-    - target: {fileID: 7128864682163022471, guid: bda21f4247bba0646b63989e21816a29,
-        type: 3}
-      propertyPath: m_LocalRotation.w
-      value: 1
-      objectReference: {fileID: 0}
-    - target: {fileID: 7128864682163022471, guid: bda21f4247bba0646b63989e21816a29,
-        type: 3}
-      propertyPath: m_LocalRotation.x
-      value: -0
-      objectReference: {fileID: 0}
-    - target: {fileID: 7128864682163022471, guid: bda21f4247bba0646b63989e21816a29,
-        type: 3}
-      propertyPath: m_LocalRotation.y
-      value: -0
-      objectReference: {fileID: 0}
-    - target: {fileID: 7128864682163022471, guid: bda21f4247bba0646b63989e21816a29,
-        type: 3}
-      propertyPath: m_LocalRotation.z
-      value: -0
-      objectReference: {fileID: 0}
-    - target: {fileID: 7128864682163022471, guid: bda21f4247bba0646b63989e21816a29,
-        type: 3}
-      propertyPath: m_LocalEulerAnglesHint.x
-      value: 0
-      objectReference: {fileID: 0}
-    - target: {fileID: 7128864682163022471, guid: bda21f4247bba0646b63989e21816a29,
-        type: 3}
-      propertyPath: m_LocalEulerAnglesHint.y
-      value: 0
-      objectReference: {fileID: 0}
-    - target: {fileID: 7128864682163022471, guid: bda21f4247bba0646b63989e21816a29,
-        type: 3}
-      propertyPath: m_LocalEulerAnglesHint.z
-      value: 0
-      objectReference: {fileID: 0}
-    - target: {fileID: 7655527870743185256, guid: bda21f4247bba0646b63989e21816a29,
-        type: 3}
-      propertyPath: droneIRL
-      value: 1
-      objectReference: {fileID: 0}
-    - target: {fileID: 7655527870743185256, guid: bda21f4247bba0646b63989e21816a29,
-        type: 3}
-      propertyPath: droneSimulation
-      value: 0
-      objectReference: {fileID: 0}
-    - target: {fileID: 7655527870743185256, guid: bda21f4247bba0646b63989e21816a29,
-        type: 3}
-      propertyPath: numberOfObstacle
-      value: 0
-      objectReference: {fileID: 0}
-    - target: {fileID: 7655527870743185256, guid: bda21f4247bba0646b63989e21816a29,
-        type: 3}
-      propertyPath: numberOfSimuDrones
-      value: 1
-      objectReference: {fileID: 0}
-    - target: {fileID: 7655527870743185256, guid: bda21f4247bba0646b63989e21816a29,
-        type: 3}
-      propertyPath: sizeOfBoidBoundingBox
-      value: 1.5
-      objectReference: {fileID: 0}
-    m_RemovedComponents: []
-    m_RemovedGameObjects: []
-    m_AddedGameObjects: []
-    m_AddedComponents:
-    - targetCorrespondingSourceObject: {fileID: 2312109956877716730, guid: bda21f4247bba0646b63989e21816a29,
-        type: 3}
-      insertIndex: 1
-      addedObject: {fileID: 1391730521}
-  m_SourcePrefab: {fileID: 100100000, guid: bda21f4247bba0646b63989e21816a29, type: 3}
---- !u!1 &1391730520 stripped
-GameObject:
-  m_CorrespondingSourceObject: {fileID: 2312109956877716730, guid: bda21f4247bba0646b63989e21816a29,
-    type: 3}
-  m_PrefabInstance: {fileID: 1391730519}
-  m_PrefabAsset: {fileID: 0}
---- !u!114 &1391730521
-MonoBehaviour:
-  m_ObjectHideFlags: 0
-  m_CorrespondingSourceObject: {fileID: 0}
-  m_PrefabInstance: {fileID: 0}
-  m_PrefabAsset: {fileID: 0}
-  m_GameObject: {fileID: 1391730520}
-  m_Enabled: 1
-  m_EditorHideFlags: 0
-  m_Script: {fileID: 11500000, guid: dd8aa4ec8a730ec419317646b9517b0e, type: 3}
-  m_Name: 
-  m_EditorClassIdentifier: 
-  boundaryMode: 2
-  sizeOfBoidBoundingBox: 2.5
-  customHeight: 2.5
-  cornerPoints:
-  - {x: 1.82, y: 0, z: -0.6}
-  - {x: -2.51, y: 0, z: -0.7}
-  - {x: -2.55, y: 0, z: 0.63}
-  - {x: 1.6, y: 0, z: 2.55}
-  saveFileName: CustomArea.json
 --- !u!1 &2056212205
 GameObject:
   m_ObjectHideFlags: 0
@@ -621,5 +640,5 @@ SceneRoots:
   m_Roots:
   - {fileID: 946188599}
   - {fileID: 1297725445}
-  - {fileID: 1391730519}
   - {fileID: 2056212208}
+  - {fileID: 815186369}
